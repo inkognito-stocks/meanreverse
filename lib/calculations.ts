@@ -53,6 +53,18 @@ export function analyzeStock(
   const prevPrice = reversedHistory[1].close;
   const firstPriceInStreak = reversedHistory[currentStreak].close;
 
+  // 4. Beräkna Z-score för att mäta extremitet (hur långt från medelvärdet)
+  // Använd senaste 20 dagarna för beräkning
+  const prices = recent20.map(d => d.close);
+  const n = prices.length;
+  const mean = prices.reduce((a, b) => a + b, 0) / n;
+  const variance = prices.reduce((acc, price) => acc + Math.pow(price - mean, 2), 0) / n;
+  const stdDev = Math.sqrt(variance);
+  
+  // Beräkna Z-score: (lastPrice - mean) / stdDev
+  // Negativt värde betyder att priset är under medelvärdet
+  const zScore = stdDev > 0 ? (lastPrice - mean) / stdDev : 0;
+
   return {
     symbol,
     name,
@@ -61,6 +73,7 @@ export function analyzeStock(
     historicalHitRate: Math.round(hitRate),
     lastPrice,
     dailyChange: ((lastPrice - prevPrice) / prevPrice) * 100,
-    totalDecline: ((lastPrice - firstPriceInStreak) / firstPriceInStreak) * 100
+    totalDecline: ((lastPrice - firstPriceInStreak) / firstPriceInStreak) * 100,
+    zScore: Math.round(zScore * 10) / 10 // Avrunda till en decimal
   };
 }

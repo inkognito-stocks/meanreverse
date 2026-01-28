@@ -26,42 +26,7 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
     );
   }, [stocks]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#0f172a] text-white p-6 font-sans flex items-center justify-center">
-        <p className="text-slate-400">Laddar aktier...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-[#0f172a] text-white p-6 font-sans flex flex-col items-center justify-center">
-        <p className="text-red-400 mb-2">Ett fel uppstod</p>
-        <p className="text-slate-500 text-sm">{error}</p>
-        <button 
-          onClick={() => {
-            setError(null);
-            if (onRefresh) onRefresh();
-          }}
-          className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-        >
-          Försök igen
-        </button>
-      </div>
-    );
-  }
-
-  if (!validStocks || validStocks.length === 0) {
-    return (
-      <div className="min-h-screen bg-[#0f172a] text-white p-6 font-sans flex flex-col items-center justify-center">
-        <p className="text-slate-400 mb-2">Inga aktier att visa</p>
-        <p className="text-slate-500 text-sm">Kontrollera konsolen för felmeddelanden</p>
-      </div>
-    );
-  }
-
-  // Sortera aktier baserat på vald kolumn och riktning
+  // Sortera aktier baserat på vald kolumn och riktning (måste vara innan conditional returns)
   const sortedStocks = useMemo(() => {
     if (!validStocks || validStocks.length === 0) {
       return [];
@@ -112,6 +77,56 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
     return sorted;
   }, [validStocks, sortColumn, sortDirection]);
 
+  // Beräkna statistik (måste vara innan conditional returns)
+  const longestStreak = useMemo(() => {
+    return validStocks.length > 0 && validStocks.every(s => typeof s?.currentStreak === 'number')
+      ? Math.max(...validStocks.map(s => s.currentStreak ?? 0))
+      : 0;
+  }, [validStocks]);
+
+  const averageStreak = useMemo(() => {
+    return validStocks.length > 0 && validStocks.every(s => typeof s?.currentStreak === 'number')
+      ? (validStocks.reduce((sum, s) => sum + (s.currentStreak ?? 0), 0) / validStocks.length).toFixed(1)
+      : '0.0';
+  }, [validStocks]);
+
+  const worstDecline = useMemo(() => {
+    return validStocks.length > 0 && validStocks.every(s => typeof s?.totalDecline === 'number')
+      ? Math.min(...validStocks.map(s => s.totalDecline ?? 0))
+      : 0;
+  }, [validStocks]);
+
+  const severeDeclines = useMemo(() => {
+    return validStocks.length > 0
+      ? validStocks.filter(s => s && typeof s.totalDecline === 'number' && s.totalDecline <= -10).length 
+      : 0;
+  }, [validStocks]);
+
+  // Helper functions (måste vara innan conditional returns)
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getExchange = (symbol: string | undefined | null) => {
+    if (!symbol || typeof symbol !== 'string') return 'Unknown';
+    if (symbol.includes('.ST')) return 'OMX Stockholm';
+    if (symbol.includes('.CO')) return 'Copenhagen';
+    if (symbol.includes('.HE')) return 'Helsinki';
+    if (symbol.includes('.OL')) return 'Oslo Børs';
+    if (symbol.includes('.TO')) return 'TSX';
+    if (symbol.includes('.') && !symbol.includes('.ST') && !symbol.includes('.CO') && !symbol.includes('.HE') && !symbol.includes('.OL') && !symbol.includes('.TO')) {
+      return 'NYSE/NASDAQ';
+    }
+    return 'Unknown';
+  };
+
+  const getShortName = (name: string | undefined | null) => {
+    if (!name || typeof name !== 'string') return '';
+    const words = name.split(' ');
+    if (words.length === 1) return name.substring(0, 4);
+    return words[0].substring(0, 4);
+  };
+
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
       // Växla riktning om samma kolumn klickas igen
@@ -132,20 +147,6 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
       <ChevronDown className="w-4 h-4" />;
   };
 
-  // Säkerhetskontroller för att undvika fel när arrayer är tomma
-  const longestStreak = validStocks.length > 0 && validStocks.every(s => typeof s?.currentStreak === 'number')
-    ? Math.max(...validStocks.map(s => s.currentStreak ?? 0))
-    : 0;
-  const averageStreak = validStocks.length > 0 && validStocks.every(s => typeof s?.currentStreak === 'number')
-    ? (validStocks.reduce((sum, s) => sum + (s.currentStreak ?? 0), 0) / validStocks.length).toFixed(1)
-    : '0.0';
-  const worstDecline = validStocks.length > 0 && validStocks.every(s => typeof s?.totalDecline === 'number')
-    ? Math.min(...validStocks.map(s => s.totalDecline ?? 0))
-    : 0;
-  const severeDeclines = validStocks.length > 0
-    ? validStocks.filter(s => s && typeof s.totalDecline === 'number' && s.totalDecline <= -10).length 
-    : 0;
-
   const handleRefresh = () => {
     setLastUpdated(new Date());
     setError(null);
@@ -158,31 +159,50 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
     }
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
-  };
-
-  // Hämta exchange från symbol (t.ex. .ST = Stockholm, .CO = Copenhagen, .HE = Helsinki, .OL = Oslo)
-  const getExchange = (symbol: string | undefined | null) => {
-    if (!symbol || typeof symbol !== 'string') return 'Unknown';
-    if (symbol.includes('.ST')) return 'OMX Stockholm';
-    if (symbol.includes('.CO')) return 'Copenhagen';
-    if (symbol.includes('.HE')) return 'Helsinki';
-    if (symbol.includes('.OL')) return 'Oslo Børs';
-    if (symbol.includes('.TO')) return 'TSX';
-    if (symbol.includes('.') && !symbol.includes('.ST') && !symbol.includes('.CO') && !symbol.includes('.HE') && !symbol.includes('.OL') && !symbol.includes('.TO')) {
-      return 'NYSE/NASDAQ';
+  const SortIcon = ({ column }: { column: SortColumn }) => {
+    if (sortColumn !== column) {
+      return <ChevronDown className="w-4 h-4 opacity-30" />;
     }
-    return 'Unknown';
+    return sortDirection === 'asc' ? 
+      <ChevronUp className="w-4 h-4" /> : 
+      <ChevronDown className="w-4 h-4" />;
   };
 
-  // Förkortat namn från fullständigt namn
-  const getShortName = (name: string | undefined | null) => {
-    if (!name || typeof name !== 'string') return '';
-    const words = name.split(' ');
-    if (words.length === 1) return name.substring(0, 4);
-    return words[0].substring(0, 4);
-  };
+  // Conditional returns EFTER alla hooks
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] text-white p-6 font-sans flex items-center justify-center">
+        <p className="text-slate-400">Laddar aktier...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] text-white p-6 font-sans flex flex-col items-center justify-center">
+        <p className="text-red-400 mb-2">Ett fel uppstod</p>
+        <p className="text-slate-500 text-sm">{error}</p>
+        <button 
+          onClick={() => {
+            setError(null);
+            if (onRefresh) onRefresh();
+          }}
+          className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+        >
+          Försök igen
+        </button>
+      </div>
+    );
+  }
+
+  if (!validStocks || validStocks.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] text-white p-6 font-sans flex flex-col items-center justify-center">
+        <p className="text-slate-400 mb-2">Inga aktier att visa</p>
+        <p className="text-slate-500 text-sm">Kontrollera konsolen för felmeddelanden</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-white">

@@ -17,4 +17,14 @@ export interface StreakAnalysis {
   historicalHitRate: number;
   zScore: number;
   currency: string;
+  // Technical indicators (optional)
+  rsi2?: number;
+  rsi14?: number;
+  sma20?: number;
+  sma50?: number;
+  sma200?: number;
+  bollingerUpper?: number;
+  bollingerLower?: number;
+  bollingerMiddle?: number;
+  avgVolume?: number;
 }

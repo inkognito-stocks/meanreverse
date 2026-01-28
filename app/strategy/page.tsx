@@ -26,13 +26,14 @@ const strategies: StrategyCard[] = [
     href: '/mean-reversion',
   },
   {
-    id: 'rsi-sniper',
+    id: 'rsi-2',
     title: 'RSI 2 Sniper',
     icon: <Crosshair className="w-8 h-8" />,
     tag: 'Aggressive',
     tagColor: 'bg-red-500/20 text-red-400 border-red-500/30',
-    status: 'coming-soon',
+    status: 'active',
     description: 'Larry Connors berömda strategi. Köper extremt översålda lägen (RSI < 10) och säljer vid första styrketecken.',
+    href: '/strategy/rsi-2',
   },
   {
     id: 'bollinger-squeeze',
@@ -40,8 +41,9 @@ const strategies: StrategyCard[] = [
     icon: <Minimize2 className="w-8 h-8" />,
     tag: 'Volatility',
     tagColor: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    status: 'coming-soon',
+    status: 'active',
     description: 'Identifierar aktier med historiskt låg volatilitet som laddar upp för en kraftig rörelse (utbrott).',
+    href: '/strategy/bollinger-squeeze',
   },
   {
     id: 'golden-cross',
@@ -49,8 +51,9 @@ const strategies: StrategyCard[] = [
     icon: <TrendingUp className="w-8 h-8" />,
     tag: 'Trend',
     tagColor: 'bg-green-500/20 text-green-400 border-green-500/30',
-    status: 'coming-soon',
+    status: 'active',
     description: 'Klassisk trendstrategi där MA50 bryter upp över MA200. Signalerar ofta starten på en långsiktig uppgång.',
+    href: '/strategy/golden-cross',
   },
   {
     id: 'volume-breakout',
@@ -58,8 +61,9 @@ const strategies: StrategyCard[] = [
     icon: <BarChart2 className="w-8 h-8" />,
     tag: 'Momentum',
     tagColor: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-    status: 'coming-soon',
+    status: 'active',
     description: 'Följ pengarna. Identifierar aktier som stiger kraftigt under onormalt hög volym (>200%), vilket indikerar institutionellt köptryck.',
+    href: '/strategy/volume-breakout',
   },
   {
     id: 'trend-pullback',
@@ -67,8 +71,9 @@ const strategies: StrategyCard[] = [
     icon: <Activity className="w-8 h-8" />,
     tag: 'Trend + Reversion',
     tagColor: 'bg-teal-500/20 text-teal-400 border-teal-500/30',
-    status: 'coming-soon',
+    status: 'active',
     description: 'Den säkra vägen. Hittar fundamentalt starka aktier i långsiktig upptrend (över MA200) som är tillfälligt översålda.',
+    href: '/strategy/trend-pullback',
   },
 ];
 
@@ -109,16 +114,10 @@ export default function StrategyPage() {
                     </div>
                     
                     {/* Status Badge */}
-                    {strategy.status === 'active' ? (
-                      <div className="flex items-center gap-1.5 px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                        <span className="text-xs text-green-400 font-medium">ACTIVE</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5 px-2 py-1 bg-yellow-500/20 border border-yellow-500/30 rounded-full">
-                        <span className="text-xs text-yellow-400 font-medium">Coming Soon</span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      <span className="text-xs text-green-400 font-medium">ACTIVE</span>
+                    </div>
                   </div>
 
                   {/* Description */}
@@ -126,7 +125,7 @@ export default function StrategyPage() {
                 </div>
               );
 
-              // Render as Link if active, otherwise as div
+              // Render as Link if active and has href
               if (strategy.status === 'active' && strategy.href) {
                 return (
                   <Link key={strategy.id} href={strategy.href}>

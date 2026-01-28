@@ -1,5 +1,6 @@
 import { DailyData, StreakAnalysis } from '../types/stock';
 import { normalizeToSEK, Currency } from './currency';
+import { calculateAllIndicators } from './ta';
 
 export function analyzeStock(
   symbol: string, 
@@ -86,6 +87,9 @@ export function analyzeStock(
   // Normalize market cap to SEK
   const marketCapSEK = normalizeToSEK(marketCap, currency);
 
+  // Calculate technical indicators
+  const indicators = calculateAllIndicators(history);
+
   return {
     symbol,
     name,
@@ -98,5 +102,7 @@ export function analyzeStock(
     historicalHitRate: Math.round(hitRate),
     zScore: Math.round(zScore * 10) / 10, // Avrunda till en decimal
     currency: currency,
+    // Technical indicators
+    ...indicators,
   };
 }

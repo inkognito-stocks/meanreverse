@@ -2,10 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Dashboard } from '../../components/Dashboard';
-import { ServiceWorkerRegistration } from '../../components/ServiceWorkerRegistration';
 import { StockSelector, FilterValues } from '../../components/StockSelector';
 import { StreakAnalysis } from '../../types/stock';
-import { Navigation } from '../../components/Navigation';
 
 export default function MeanReversionPage() {
   const [stocks, setStocks] = useState<StreakAnalysis[]>([]);
@@ -112,8 +110,6 @@ export default function MeanReversionPage() {
 
   return (
     <main>
-      <ServiceWorkerRegistration />
-      <Navigation />
       <div className="min-h-screen bg-[#0f172a] text-white p-3 sm:p-6 font-sans pt-20">
         <StockSelector onFilterChange={handleFilterChange} isLoading={isLoading} />
         <Dashboard 

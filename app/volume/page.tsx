@@ -1,13 +1,8 @@
 'use client';
 
-import { Navigation } from '../../components/Navigation';
-import { ServiceWorkerRegistration } from '../../components/ServiceWorkerRegistration';
-
 export default function VolumePage() {
   return (
     <main>
-      <ServiceWorkerRegistration />
-      <Navigation />
       <div className="min-h-screen bg-[#0f172a] text-white p-3 sm:p-6 font-sans pt-20">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4">Volym</h1>

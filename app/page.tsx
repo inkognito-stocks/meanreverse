@@ -1,14 +1,10 @@
 'use client';
 
-import { Navigation } from '../components/Navigation';
-import { ServiceWorkerRegistration } from '../components/ServiceWorkerRegistration';
 import Link from 'next/link';
 
 export default function Home() {
   return (
     <main>
-      <ServiceWorkerRegistration />
-      <Navigation />
       <div className="min-h-screen bg-[#0f172a] text-white p-3 sm:p-6 font-sans pt-20">
         <div className="max-w-4xl mx-auto text-center">
           <div className="mb-8">

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { LayoutWrapper } from '../components/LayoutWrapper';
 
 export const metadata: Metadata = {
   title: 'Mean Reverse Dashboard',
@@ -41,7 +42,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Mean Reverse" />
       </head>
-      <body>{children}</body>
+      <body>
+        <LayoutWrapper>{children}</LayoutWrapper>
+      </body>
     </html>
   );
 }

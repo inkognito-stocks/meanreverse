@@ -99,10 +99,10 @@ export function StockSelector({ onSelect, isLoading = false }: StockSelectorProp
           </p>
         </div>
 
-        {/* Kapitalstorlek Checkboxes */}
+        {/* Lista Checkboxes */}
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-3">
-            Kapitalstorlek
+            Lista
           </label>
           <div className="space-y-2">
             <label className="flex items-center cursor-pointer group">
@@ -143,7 +143,7 @@ export function StockSelector({ onSelect, isLoading = false }: StockSelectorProp
             </label>
           </div>
           <p className="mt-2 text-xs text-slate-400">
-            {selectedCapSizes.length} {selectedCapSizes.length === 1 ? 'kategori vald' : 'kategorier valda'}
+            {selectedCapSizes.length} {selectedCapSizes.length === 1 ? 'lista vald' : 'listor valda'}
           </p>
         </div>
       </div>

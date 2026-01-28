@@ -18,6 +18,8 @@ export default function Home() {
     capSizes: ('large' | 'mid' | 'small')[]
   ) => {
     setIsLoading(true);
+    // Rensa gamla aktier när nya hämtas för att undvika att visa fel data
+    setStocks([]);
     console.log(`Fetching stocks for: ${countries.join(', ')} - ${capSizes.join(', ')}`);
     
     try {
@@ -50,8 +52,11 @@ export default function Home() {
                 typeof stock.currentStreak === 'number' &&
                 typeof stock.totalDecline === 'number'
               );
-              console.log(`Valid stocks: ${validStocks.length} out of ${data.length}`);
+              console.log(`Valid stocks: ${validStocks.length} out of ${data.length} for ${country} ${capSize}`);
+              console.log(`Sample symbols:`, validStocks.slice(0, 3).map((s: any) => s.symbol));
               allStocks.push(...validStocks);
+            } else {
+              console.log(`No stocks returned for ${country} ${capSize}`);
             }
           } catch (error: any) {
             console.error(`Error fetching ${country} ${capSize}:`, error);

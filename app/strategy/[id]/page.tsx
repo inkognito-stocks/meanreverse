@@ -58,7 +58,8 @@ export default function StrategyDetailPage() {
           
           if (Array.isArray(data) && data.length > 0) {
             // For each stock, fetch history and calculate technical indicators
-            for (const stock of data.slice(0, 30)) { // Limit to 30 stocks per country to avoid too many API calls
+            // Limit to 20 stocks per country to avoid too many API calls (each needs history fetch)
+            for (const stock of data.slice(0, 20)) {
               try {
                 // Fetch full history for TA calculations
                 const history = await fetchStockHistory(stock.symbol, 252, country as any);
@@ -79,6 +80,7 @@ export default function StrategyDetailPage() {
                 // Apply strategy filter
                 if (strategy.filter(enrichedStock)) {
                   allStocks.push(enrichedStock);
+                  console.log(`✓ ${stock.symbol} matches ${strategyId} filter`);
                 }
               } catch (error) {
                 console.error(`Error processing ${stock.symbol}:`, error);

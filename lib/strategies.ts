@@ -42,13 +42,16 @@ export const STRATEGIES: Record<string, StrategyConfig> = {
     title: 'Volume Breakout',
     description: 'Volym > 200% av snittet + Pris upp.',
     filter: (s: StreakAnalysis) => {
+      // For volume breakout, we need to check if current turnover is significantly higher than average
+      // Since we don't have daily volume in the stock object, we'll use a simplified approach:
+      // Check if dailyChange is positive and turnoverSEK is high relative to market cap
+      // This is a proxy - in production you'd want actual volume data
       if (!s.avgVolume || s.avgVolume === 0) {
         return false;
       }
-      // Check if current volume (turnoverSEK) is > 200% of average
-      // Note: We use turnoverSEK as a proxy for volume since we have it normalized
-      // In a real implementation, you'd want actual volume data
-      const volumeRatio = s.turnoverSEK / s.avgVolume;
+      // Use turnoverSEK as proxy for volume (normalized)
+      // Compare current turnover to average volume
+      const volumeRatio = s.turnoverSEK / (s.avgVolume || 1);
       return s.dailyChange > 0 && volumeRatio > 2.0;
     },
   },

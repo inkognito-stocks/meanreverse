@@ -12,6 +12,20 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
   const [sortColumn, setSortColumn] = useState<SortColumn>('streak');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [error, setError] = useState<string | null>(null);
+
+  // Validera stocks-arrayen
+  const validStocks = React.useMemo(() => {
+    if (!stocks || !Array.isArray(stocks)) return [];
+    return stocks.filter((stock): stock is StreakAnalysis => 
+      stock !== null && 
+      stock !== undefined &&
+      typeof stock === 'object' &&
+      typeof stock.symbol === 'string' &&
+      stock.symbol.length > 0
+    );
+  }, [stocks]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#0f172a] text-white p-6 font-sans flex items-center justify-center">
@@ -20,7 +34,25 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
     );
   }
 
-  if (!stocks || stocks.length === 0) {
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] text-white p-6 font-sans flex flex-col items-center justify-center">
+        <p className="text-red-400 mb-2">Ett fel uppstod</p>
+        <p className="text-slate-500 text-sm">{error}</p>
+        <button 
+          onClick={() => {
+            setError(null);
+            if (onRefresh) onRefresh();
+          }}
+          className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+        >
+          Försök igen
+        </button>
+      </div>
+    );
+  }
+
+  if (!validStocks || validStocks.length === 0) {
     return (
       <div className="min-h-screen bg-[#0f172a] text-white p-6 font-sans flex flex-col items-center justify-center">
         <p className="text-slate-400 mb-2">Inga aktier att visa</p>
@@ -31,11 +63,11 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
 
   // Sortera aktier baserat på vald kolumn och riktning
   const sortedStocks = useMemo(() => {
-    if (!stocks || stocks.length === 0) {
+    if (!validStocks || validStocks.length === 0) {
       return [];
     }
     
-    const sorted = [...stocks];
+    const sorted = [...validStocks];
     
     sorted.sort((a, b) => {
       let aValue: number;
@@ -78,7 +110,7 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
     });
     
     return sorted;
-  }, [stocks, sortColumn, sortDirection]);
+  }, [validStocks, sortColumn, sortDirection]);
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
@@ -101,23 +133,28 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
   };
 
   // Säkerhetskontroller för att undvika fel när arrayer är tomma
-  const longestStreak = stocks.length > 0 && stocks.every(s => typeof s.currentStreak === 'number')
-    ? Math.max(...stocks.map(s => s.currentStreak ?? 0))
+  const longestStreak = validStocks.length > 0 && validStocks.every(s => typeof s?.currentStreak === 'number')
+    ? Math.max(...validStocks.map(s => s.currentStreak ?? 0))
     : 0;
-  const averageStreak = stocks.length > 0 && stocks.every(s => typeof s.currentStreak === 'number')
-    ? (stocks.reduce((sum, s) => sum + (s.currentStreak ?? 0), 0) / stocks.length).toFixed(1)
+  const averageStreak = validStocks.length > 0 && validStocks.every(s => typeof s?.currentStreak === 'number')
+    ? (validStocks.reduce((sum, s) => sum + (s.currentStreak ?? 0), 0) / validStocks.length).toFixed(1)
     : '0.0';
-  const worstDecline = stocks.length > 0 && stocks.every(s => typeof s.totalDecline === 'number')
-    ? Math.min(...stocks.map(s => s.totalDecline ?? 0))
+  const worstDecline = validStocks.length > 0 && validStocks.every(s => typeof s?.totalDecline === 'number')
+    ? Math.min(...validStocks.map(s => s.totalDecline ?? 0))
     : 0;
-  const severeDeclines = stocks.length > 0
-    ? stocks.filter(s => s && typeof s.totalDecline === 'number' && s.totalDecline <= -10).length 
+  const severeDeclines = validStocks.length > 0
+    ? validStocks.filter(s => s && typeof s.totalDecline === 'number' && s.totalDecline <= -10).length 
     : 0;
 
   const handleRefresh = () => {
     setLastUpdated(new Date());
-    if (onRefresh) {
-      onRefresh();
+    setError(null);
+    try {
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Ett fel uppstod vid uppdatering');
     }
   };
 

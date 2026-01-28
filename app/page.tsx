@@ -41,7 +41,16 @@ export default function Home() {
             console.log(`Received ${data.length} stocks from ${country} ${capSize}`);
             
             if (Array.isArray(data) && data.length > 0) {
-              allStocks.push(...data);
+              // Validera att varje stock har alla nödvändiga fält
+              const validStocks = data.filter((stock: any) => 
+                stock && 
+                typeof stock === 'object' &&
+                stock.symbol &&
+                typeof stock.currentStreak === 'number' &&
+                typeof stock.totalDecline === 'number'
+              );
+              console.log(`Valid stocks: ${validStocks.length} out of ${data.length}`);
+              allStocks.push(...validStocks);
             }
           } catch (error: any) {
             console.error(`Error fetching ${country} ${capSize}:`, error);
@@ -53,10 +62,17 @@ export default function Home() {
 
       // Sortera alla aktier efter streak och ta bort dubbletter baserat på symbol
       const uniqueStocks = Array.from(
-        new Map(allStocks.map(stock => [stock.symbol, stock])).values()
-      );
+        new Map(allStocks
+          .filter((stock: any) => stock && stock.symbol)
+          .map((stock: any) => [stock.symbol, stock]))
+          .values()
+      ) as StreakAnalysis[];
       
-      const sortedStocks = uniqueStocks.sort((a, b) => b.currentStreak - a.currentStreak);
+      const sortedStocks = uniqueStocks.sort((a, b) => {
+        const aStreak = a?.currentStreak ?? 0;
+        const bStreak = b?.currentStreak ?? 0;
+        return bStreak - aStreak;
+      });
       
       console.log(`Total unique stocks: ${sortedStocks.length}`);
       setStocks(sortedStocks);

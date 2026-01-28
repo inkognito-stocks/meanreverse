@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { analyzeStock } from '../../../lib/calculations';
 import { fetchStockHistory, fetchStockInfo } from '../../../lib/googleFinance';
 import { STOCK_LISTS } from '../../../lib/stockLists';
-import { normalizeToSEK } from '../../../lib/currency';
 
 // Market cap thresholds in SEK (normalized)
 // Large Cap: > $10B USD = > 105B SEK

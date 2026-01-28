@@ -1,21 +1,35 @@
 // Hämtar aktiedata från Google Finance / Yahoo Finance
 import { DailyData } from '../types/stock';
 
-// Konverterar svenska aktiesymboler till Yahoo Finance-format
-// Exempel: VOLV-B -> VOLV-B.ST, ERIC -> ERIC.ST
-function toYahooSymbol(symbol: string): string {
+// Konverterar aktiesymboler till Yahoo Finance-format
+// Sverige: VOLV-B -> VOLV-B.ST
+// Kanada: RY.TO -> RY.TO (redan korrekt)
+// USA: AAPL -> AAPL (ingen ändring)
+function toYahooSymbol(symbol: string, country: 'sweden' | 'canada' | 'usa' = 'sweden'): string {
   if (symbol.includes('.')) {
-    return symbol; // Redan i rätt format
+    return symbol; // Redan i rätt format (t.ex. RY.TO eller VOLV-B.ST)
   }
-  return `${symbol}.ST`; // Stockholmsbörsen
+  
+  // Lägg till börs-suffix baserat på land
+  switch (country) {
+    case 'sweden':
+      return `${symbol}.ST`; // Stockholmsbörsen
+    case 'canada':
+      return `${symbol}.TO`; // Toronto Stock Exchange
+    case 'usa':
+      return symbol; // USA behöver inget suffix
+    default:
+      return `${symbol}.ST`; // Default till Sverige
+  }
 }
 
 // Hämtar historisk data från Yahoo Finance API
 export async function fetchStockHistory(
   symbol: string,
-  period: number = 252 // Antal dagar (ca 1 år)
+  period: number = 252, // Antal dagar (ca 1 år)
+  country: 'sweden' | 'canada' | 'usa' = 'sweden'
 ): Promise<DailyData[]> {
-  const yahooSymbol = toYahooSymbol(symbol);
+  const yahooSymbol = toYahooSymbol(symbol, country);
   
   try {
     // Använd Yahoo Finance API
@@ -84,13 +98,16 @@ export async function fetchStockHistory(
 }
 
 // Hämtar aktuell information om en aktie
-export async function fetchStockInfo(symbol: string): Promise<{
+export async function fetchStockInfo(
+  symbol: string,
+  country: 'sweden' | 'canada' | 'usa' = 'sweden'
+): Promise<{
   name: string;
   price: number;
   change: number;
   changePercent: number;
 }> {
-  const yahooSymbol = toYahooSymbol(symbol);
+  const yahooSymbol = toYahooSymbol(symbol, country);
   
   try {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;

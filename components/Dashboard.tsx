@@ -18,7 +18,7 @@ export const Dashboard = ({ stocks }: { stocks: StreakAnalysis[] }) => {
   const bestHitRate = Math.max(...stocks.map(s => s.historicalHitRate));
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white p-3 sm:p-6 font-sans">
+    <div>
       {/* Header med logout-knapp */}
       <div className="flex justify-end mb-4">
         <LogoutButton />

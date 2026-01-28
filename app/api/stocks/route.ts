@@ -91,6 +91,13 @@ export async function GET(request: Request) {
         // Fetch current info first to get market cap and currency
         const info = await fetchStockInfo(symbol, country);
         
+        // Safety check: ensure currency exists
+        if (!info.currency) {
+          console.log(`Skipping ${symbol}: missing currency`);
+          failCount++;
+          continue;
+        }
+        
         // Fetch historical data (ca 1 year)
         const history = await fetchStockHistory(symbol, 252, country);
         
@@ -102,10 +109,17 @@ export async function GET(request: Request) {
         }
 
         // Analyze the stock (pass market cap and currency)
-        const analysis = analyzeStock(symbol, info.name || symbol, history, 1000000, info.marketCap, info.currency);
+        const analysis = analyzeStock(symbol, info.name || symbol, history, 1000000, info.marketCap || 0, info.currency);
         
         if (!analysis) {
           console.log(`✗ Analysis returned null for ${symbol}`);
+          failCount++;
+          continue;
+        }
+        
+        // Safety check: ensure marketCapSEK exists and is a valid number
+        if (typeof analysis.marketCapSEK !== 'number' || isNaN(analysis.marketCapSEK)) {
+          console.log(`Skipping ${symbol}: invalid marketCapSEK (${analysis.marketCapSEK})`);
           failCount++;
           continue;
         }

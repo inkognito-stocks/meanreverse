@@ -1,125 +1,52 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Dashboard } from '../components/Dashboard';
+import { Navigation } from '../components/Navigation';
 import { ServiceWorkerRegistration } from '../components/ServiceWorkerRegistration';
-import { StockSelector, FilterValues } from '../components/StockSelector';
-import { StreakAnalysis } from '../types/stock';
+import Link from 'next/link';
 
 export default function Home() {
-  const [stocks, setStocks] = useState<StreakAnalysis[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentFilters, setCurrentFilters] = useState<FilterValues>({
-    activeRegion: 'nordic',
-    selectedCountries: ['sweden'],
-    marketCapMin: 0,
-    marketCapMax: 500000,
-    minTurnover: 0,
-  });
-
-  // Använd useCallback för att stabilisera fetchStocks och undvika oändlig loop
-  const fetchStocks = useCallback(async (
-    countries: string[]
-  ) => {
-    setIsLoading(true);
-    // Rensa gamla aktier när nya hämtas för att undvika att visa fel data
-    setStocks([]);
-    console.log(`Fetching stocks for: ${countries.join(', ')}`);
-    
-    try {
-      const allStocks: StreakAnalysis[] = [];
-
-      // Hämta aktier för varje land (no cap size filtering - done client-side)
-      for (const country of countries) {
-        try {
-          const url = `/api/stocks?country=${country}`;
-          console.log(`Fetching from: ${url}`);
-          
-          const response = await fetch(url);
-          
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            console.error(`API error for ${country}:`, response.status, errorData);
-            continue; // Fortsätt med nästa land
-          }
-          
-          const data = await response.json();
-          console.log(`Received ${data.length} stocks from ${country}`);
-          
-          if (Array.isArray(data) && data.length > 0) {
-            // Validera att varje stock har alla nödvändiga fält
-            const validStocks = data.filter((stock: any) => 
-              stock && 
-              typeof stock === 'object' &&
-              stock.symbol &&
-              typeof stock.currentStreak === 'number' &&
-              typeof stock.totalDecline === 'number'
-            );
-            console.log(`Valid stocks: ${validStocks.length} out of ${data.length} for ${country}`);
-            console.log(`Sample symbols:`, validStocks.slice(0, 3).map((s: any) => s.symbol));
-            allStocks.push(...validStocks);
-          } else {
-            console.log(`No stocks returned for ${country}`);
-          }
-        } catch (error: any) {
-          console.error(`Error fetching ${country}:`, error);
-          // Fortsätt med nästa land även om denna misslyckades
-          continue;
-        }
-      }
-
-      // Sortera alla aktier efter streak och ta bort dubbletter baserat på symbol
-      const uniqueStocks = Array.from(
-        new Map(allStocks
-          .filter((stock: any) => stock && stock.symbol)
-          .map((stock: any) => [stock.symbol, stock]))
-          .values()
-      ) as StreakAnalysis[];
-      
-      const sortedStocks = uniqueStocks.sort((a, b) => {
-        const aStreak = a?.currentStreak ?? 0;
-        const bStreak = b?.currentStreak ?? 0;
-        return bStreak - aStreak;
-      });
-      
-      console.log(`Total unique stocks: ${sortedStocks.length}`);
-      setStocks(sortedStocks);
-    } catch (error: any) {
-      console.error('Error fetching stocks:', error);
-      setStocks([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []); // Empty dependency array - funktionen behöver inte återskapas
-
-  // Använd useCallback för att stabilisera funktionsreferensen och undvika oändlig loop
-  const handleFilterChange = useCallback((filters: FilterValues) => {
-    setCurrentFilters(filters);
-    fetchStocks(filters.selectedCountries);
-  }, [fetchStocks]); // fetchStocks är nu stabiliserad med useCallback
-
-  // Använd useCallback för refresh-funktionen för att undvika oändlig loop
-  const handleRefresh = useCallback(() => {
-    // Trigger refresh by re-fetching with current selections
-    fetchStocks(currentFilters.selectedCountries);
-  }, [fetchStocks, currentFilters]);
-
-  useEffect(() => {
-    // Initial load med default values
-    fetchStocks(['sweden']);
-  }, [fetchStocks]); // fetchStocks är nu stabiliserad med useCallback
-
   return (
     <main>
       <ServiceWorkerRegistration />
-      <div className="min-h-screen bg-[#0f172a] text-white p-3 sm:p-6 font-sans">
-        <StockSelector onFilterChange={handleFilterChange} isLoading={isLoading} />
-        <Dashboard 
-          stocks={stocks} 
-          isLoading={isLoading} 
-          onRefresh={handleRefresh}
-          filters={currentFilters}
-        />
+      <Navigation />
+      <div className="min-h-screen bg-[#0f172a] text-white p-3 sm:p-6 font-sans pt-20">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="mb-8">
+            <div className="text-red-500 text-6xl font-bold mb-4">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mx-auto">
+                <path d="M3 12h18M3 6h18M3 18h18" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">Välkommen till DownStreak</h1>
+            <p className="text-slate-400 text-lg mb-8">Sidan är under arbete</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12">
+            <Link
+              href="/mean-reversion"
+              className="p-6 bg-[#1e293b] border border-slate-700 rounded-xl hover:border-red-500/50 transition-colors"
+            >
+              <h2 className="text-xl font-bold text-white mb-2">Mean Reversion</h2>
+              <p className="text-slate-400 text-sm">Analysera aktier med konsekutiva nedgångar</p>
+            </Link>
+            
+            <Link
+              href="/strategy"
+              className="p-6 bg-[#1e293b] border border-slate-700 rounded-xl hover:border-red-500/50 transition-colors"
+            >
+              <h2 className="text-xl font-bold text-white mb-2">Strategi</h2>
+              <p className="text-slate-400 text-sm">Sidan är under arbete</p>
+            </Link>
+            
+            <Link
+              href="/volume"
+              className="p-6 bg-[#1e293b] border border-slate-700 rounded-xl hover:border-red-500/50 transition-colors"
+            >
+              <h2 className="text-xl font-bold text-white mb-2">Volym</h2>
+              <p className="text-slate-400 text-sm">Sidan är under arbete</p>
+            </Link>
+          </div>
+        </div>
       </div>
     </main>
   );

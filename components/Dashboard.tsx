@@ -294,17 +294,9 @@ export const Dashboard = ({ stocks, isLoading, onRefresh, filters }: { stocks: S
       {/* Header Section */}
       <div className="mb-6">
         <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            {/* App Logo/Icon */}
-            <div className="text-red-500 text-2xl font-bold">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 12h18M3 6h18M3 18h18" strokeLinecap="round"/>
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-white">DownStreak</h1>
-              <p className="text-slate-400 text-sm sm:text-base">Consecutive decline tracker</p>
-            </div>
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-white">Mean Reversion</h1>
+            <p className="text-slate-400 text-sm sm:text-base">Consecutive decline tracker</p>
           </div>
           <div className="flex items-center gap-4">
             {/* Updated timestamp */}

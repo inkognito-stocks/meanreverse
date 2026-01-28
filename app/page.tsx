@@ -4,13 +4,31 @@ import { Dashboard } from '../components/Dashboard';
 import { ServiceWorkerRegistration } from '../components/ServiceWorkerRegistration';
 import { StreakAnalysis } from '../types/stock';
 import { analyzeStock } from '../lib/calculations';
-import { fetchStockHistory, fetchStockInfo, SWEDISH_LARGE_CAP_SYMBOLS } from '../lib/googleFinance';
+import { fetchStockHistory, fetchStockInfo } from '../lib/googleFinance';
+import { 
+  LARGE_CAP_STOCKS, 
+  MID_CAP_STOCKS, 
+  TECH_STOCKS, 
+  BANK_STOCKS,
+  INDUSTRIAL_STOCKS,
+  ALL_STOCKS 
+} from '../lib/stockLists';
 
 async function getStockAnalyses(): Promise<StreakAnalysis[]> {
   const analyses: StreakAnalysis[] = [];
   
+  // Välj vilken lista du vill använda:
+  // - LARGE_CAP_STOCKS: Största aktierna (default)
+  // - MID_CAP_STOCKS: Medelstora aktier
+  // - TECH_STOCKS: Teknologiaktier
+  // - BANK_STOCKS: Bankaktier
+  // - INDUSTRIAL_STOCKS: Industriaktier
+  // - ALL_STOCKS: Alla aktier kombinerat
+  const selectedStockList = LARGE_CAP_STOCKS;
+  
   // Hämta data för de första 10 aktierna (för att undvika för många requests)
-  const symbolsToFetch = SWEDISH_LARGE_CAP_SYMBOLS.slice(0, 10);
+  // Ändra detta nummer om du vill hämta fler/färre aktier
+  const symbolsToFetch = selectedStockList.slice(0, 10);
   
   for (const symbol of symbolsToFetch) {
     try {

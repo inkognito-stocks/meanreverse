@@ -133,26 +133,15 @@ export async function fetchStockInfo(symbol: string): Promise<{
   }
 }
 
-// Lista över svenska Large Cap-aktier (OMX Stockholm Large Cap)
-export const SWEDISH_LARGE_CAP_SYMBOLS = [
-  'VOLV-B',
-  'ASSA-B',
-  'ERIC',
-  'SHB-A',
-  'SWED-A',
-  'ATCO-A',
-  'ATCO-B',
-  'SAND',
-  'SKF-B',
-  'ALFA',
-  'INVE-B',
-  'GETI-B',
-  'TEL2-B',
-  'SCA-B',
-  'HM-B',
-  'ELUX-B',
-  'INDT',
-  'ABB',
-  'ASSA-B',
-  'AZN',
-];
+// Importera aktielistor från separat fil
+export { 
+  SWEDISH_LARGE_CAP_SYMBOLS,
+  LARGE_CAP_STOCKS,
+  MID_CAP_STOCKS,
+  TECH_STOCKS,
+  BANK_STOCKS,
+  INDUSTRIAL_STOCKS,
+  CONSUMER_STOCKS,
+  REAL_ESTATE_STOCKS,
+  ALL_STOCKS
+} from './stockLists';

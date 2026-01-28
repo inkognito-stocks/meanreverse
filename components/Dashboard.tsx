@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { ArrowDown, TrendingUp, ChevronUp, ChevronDown, RefreshCw, Clock, BarChart3, AlertTriangle } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { ArrowDown, TrendingUp, ChevronUp, ChevronDown, RefreshCw, Clock, BarChart3, AlertTriangle, HelpCircle, X } from 'lucide-react';
 import { StreakAnalysis } from '../types/stock';
 import { LogoutButton } from './LogoutButton';
 
@@ -13,6 +13,7 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [error, setError] = useState<string | null>(null);
+  const [mobileTooltip, setMobileTooltip] = useState<string | null>(null);
 
   // Validera stocks-arrayen
   const validStocks = React.useMemo(() => {
@@ -120,11 +121,11 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
     return 'Unknown';
   };
 
-  const getShortName = (name: string | undefined | null) => {
-    if (!name || typeof name !== 'string') return '';
-    const words = name.split(' ');
-    if (words.length === 1) return name.substring(0, 4);
-    return words[0].substring(0, 4);
+  // Hämta bolagsnamn - visa fullständigt namn om det finns och inte är "Unknown"
+  const getCompanyName = (name: string | undefined | null): string | null => {
+    if (!name || typeof name !== 'string') return null;
+    if (name.toLowerCase() === 'unknown' || name.trim() === '') return null;
+    return name;
   };
 
   const handleSort = (column: SortColumn) => {
@@ -157,6 +158,72 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
     } catch (err: any) {
       setError(err?.message || 'Ett fel uppstod vid uppdatering');
     }
+  };
+
+  // Tooltip-komponent för desktop hover och mobil klick
+  const Tooltip = ({ 
+    text, 
+    id, 
+    children,
+    mobileOnly = false
+  }: { 
+    text: string; 
+    id: string; 
+    children?: React.ReactNode;
+    mobileOnly?: boolean;
+  }) => {
+    const [isMobile, setIsMobile] = useState(false);
+    const isOpen = mobileTooltip === id;
+
+    useEffect(() => {
+      const checkMobile = () => setIsMobile(window.innerWidth < 768);
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    if (mobileOnly || isMobile) {
+      return (
+        <div className="relative inline-block">
+          <button
+            onClick={(e: React.MouseEvent) => {
+              e.stopPropagation();
+              setMobileTooltip(isOpen ? null : id);
+            }}
+            className="inline-flex items-center"
+            aria-label="Visa förklaring"
+          >
+            {children}
+            <HelpCircle className="w-3 h-3 ml-1 text-slate-400" />
+          </button>
+          {isOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setMobileTooltip(null)}>
+              <div className="bg-[#1e293b] border border-slate-600 rounded-lg p-4 max-w-sm relative" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                <button
+                  onClick={() => setMobileTooltip(null)}
+                  className="absolute top-2 right-2 text-slate-400 hover:text-white"
+                  aria-label="Stäng"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <p className="text-sm text-white pr-6">{text}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="relative group inline-flex items-center">
+        {children}
+        <HelpCircle className="w-3 h-3 ml-1 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-[#1e293b] border border-slate-600 rounded-lg text-xs text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 max-w-xs">
+          {text}
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-600"></div>
+        </div>
+      </div>
+    );
   };
 
   // Conditional returns EFTER alla hooks
@@ -254,9 +321,34 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
       {/* Watchlist Section */}
       <div className="mb-4">
         <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">Watchlist</h2>
-        <p className="text-slate-400 text-sm">
+        <p className="text-slate-400 text-sm hidden md:block">
           {sortedStocks.length} stocks • Sorted by consecutive decline days
         </p>
+        
+        {/* Mobile Sort Dropdown */}
+        <div className="md:hidden mt-3">
+          <label className="block text-sm font-medium text-slate-300 mb-2">
+            Sortera efter
+          </label>
+          <select
+            value={`${sortColumn}-${sortDirection}`}
+            onChange={(e) => {
+              const [col, dir] = e.target.value.split('-');
+              setSortColumn(col as SortColumn);
+              setSortDirection(dir as SortDirection);
+            }}
+            className="w-full px-4 py-2 bg-[#1e293b] border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-slate-500"
+          >
+            <option value="streak-desc">Högst Streak</option>
+            <option value="streak-asc">Lägst Streak</option>
+            <option value="hitRate-desc">Högst Hit Rate</option>
+            <option value="hitRate-asc">Lägst Hit Rate</option>
+            <option value="zScore-asc">Lägst Z-Score (Mest extremt)</option>
+            <option value="zScore-desc">Högst Z-Score</option>
+            <option value="decline-asc">Störst Tapp</option>
+            <option value="decline-desc">Lägst Tapp</option>
+          </select>
+        </div>
       </div>
 
       {/* Watchlist Table - Responsiv */}
@@ -272,7 +364,12 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
                   onClick={() => handleSort('streak')}
                 >
                   <div className="flex items-center gap-2">
-                    DOWN STREAK
+                    <Tooltip 
+                      text="Antal handelsdagar i rad som aktien har stängt på minus." 
+                      id="streak"
+                    >
+                      <span>DOWN STREAK</span>
+                    </Tooltip>
                     {sortColumn === 'streak' && (
                       <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded">SORTED</span>
                     )}
@@ -286,7 +383,12 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
                   onClick={() => handleSort('hitRate')}
                 >
                   <div className="flex items-center gap-2">
-                    HIT RATE
+                    <Tooltip 
+                      text="Sannolikheten att aktien stänger grönt nästa dag, baserat på historiska data vid liknande streaks." 
+                      id="hitRate"
+                    >
+                      <span>HIT RATE</span>
+                    </Tooltip>
                     <SortIcon column="hitRate" />
                   </div>
                 </th>
@@ -295,7 +397,12 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
                   onClick={() => handleSort('decline')}
                 >
                   <div className="flex items-center gap-2">
-                    DECLINE
+                    <Tooltip 
+                      text="Total nedgång från början av nuvarande streak." 
+                      id="decline"
+                    >
+                      <span>DECLINE</span>
+                    </Tooltip>
                     <SortIcon column="decline" />
                   </div>
                 </th>
@@ -304,7 +411,12 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
                   onClick={() => handleSort('zScore')}
                 >
                   <div className="flex items-center gap-2">
-                    EXTREMITY (Z)
+                    <Tooltip 
+                      text="Mäter hur extremt priset avviker från sitt snitt. Värden under -2.0 indikerar att aktien är kraftigt översåld." 
+                      id="zScore"
+                    >
+                      <span>EXTREMITY (Z)</span>
+                    </Tooltip>
                     <SortIcon column="zScore" />
                   </div>
                 </th>
@@ -323,9 +435,15 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
                     </td>
                     <td className="p-4">
                       <div className="font-bold text-white">{stock.symbol || 'N/A'}</div>
-                      <div className="text-slate-400 text-sm">{getExchange(stock.symbol)}</div>
+                      {getCompanyName(stock.name) ? (
+                        <div className="text-slate-400 text-sm mt-1">{getCompanyName(stock.name)}</div>
+                      ) : (
+                        <div className="text-slate-500 text-xs mt-1">{getExchange(stock.symbol)}</div>
+                      )}
                     </td>
-                    <td className="p-4 text-slate-400 text-sm">{getShortName(stock.name)}</td>
+                    <td className="p-4 text-slate-400 text-sm">
+                      {getCompanyName(stock.name) ? getExchange(stock.symbol) : '-'}
+                    </td>
                     <td className="p-4 font-mono text-green-400">{(stock.historicalHitRate ?? 0)}%</td>
                     <td className="p-4 text-red-400">{((stock.totalDecline ?? 0)).toFixed(1)}%</td>
                     <td className="p-4">
@@ -359,28 +477,50 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
                     {(stock.currentStreak ?? 0)}d <ArrowDown className="w-3 h-3" />
                   </span>
                   
-                  {/* Symbol and Exchange */}
+                  {/* Symbol and Company Name */}
                   <div className="flex-1">
                     <div className="font-bold text-white">{stock.symbol || 'N/A'}</div>
-                    <div className="text-slate-400 text-xs">{getExchange(stock.symbol)}</div>
+                    {getCompanyName(stock.name) ? (
+                      <div className="text-slate-400 text-xs mt-1">{getCompanyName(stock.name)}</div>
+                    ) : (
+                      <div className="text-slate-500 text-xs mt-1">{getExchange(stock.symbol)}</div>
+                    )}
                   </div>
-                  
-                  {/* Short Name */}
-                  <div className="text-white text-sm font-semibold">{getShortName(stock.name)}</div>
                 </div>
                 
                 {/* Additional info row */}
                 <div className="mt-3 pt-3 border-t border-slate-700 grid grid-cols-3 gap-2 text-xs">
                   <div>
-                    <p className="text-slate-400">Hit Rate</p>
+                    <div className="flex items-center gap-1 mb-1">
+                      <p className="text-slate-400">Hit Rate</p>
+                      <Tooltip 
+                        text="Sannolikheten att aktien stänger grönt nästa dag, baserat på historiska data vid liknande streaks." 
+                        id="mobile-hitRate"
+                        mobileOnly={true}
+                      />
+                    </div>
                     <p className="text-green-400 font-semibold">{(stock.historicalHitRate ?? 0)}%</p>
                   </div>
                   <div>
-                    <p className="text-slate-400">Decline</p>
+                    <div className="flex items-center gap-1 mb-1">
+                      <p className="text-slate-400">Decline</p>
+                      <Tooltip 
+                        text="Total nedgång från början av nuvarande streak." 
+                        id="mobile-decline"
+                        mobileOnly={true}
+                      />
+                    </div>
                     <p className="text-red-400 font-semibold">{((stock.totalDecline ?? 0)).toFixed(1)}%</p>
                   </div>
                   <div>
-                    <p className="text-slate-400">Z-Score</p>
+                    <div className="flex items-center gap-1 mb-1">
+                      <p className="text-slate-400">Z-Score</p>
+                      <Tooltip 
+                        text="Mäter hur extremt priset avviker från sitt snitt. Värden under -2.0 indikerar att aktien är kraftigt översåld." 
+                        id="mobile-zScore"
+                        mobileOnly={true}
+                      />
+                    </div>
                     <p className={`font-semibold ${
                       (stock.zScore ?? 0) <= -2.5 ? 'text-red-400' : 
                       (stock.zScore ?? 0) <= -1.5 ? 'text-orange-400' : 

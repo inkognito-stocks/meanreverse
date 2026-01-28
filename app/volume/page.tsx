@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { StockSelector, FilterValues } from '../../components/StockSelector';
 import { StreakAnalysis } from '../../types/stock';
-import { calculateAllIndicators, calculateRVOL } from '../../lib/ta';
+import { calculateAllIndicators } from '../../lib/ta';
 import { fetchStockHistory } from '../../lib/googleFinance';
 import { Flame, TrendingDown, TrendingUp, BarChart2 } from 'lucide-react';
 

@@ -1,244 +1,273 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { StockSelector, FilterValues } from '../../components/StockSelector';
 import { StreakAnalysis } from '../../types/stock';
-import { Activity, TrendingDown, TrendingUp, AlertTriangle, Flame, BarChart3, Loader2 } from 'lucide-react';
+import { Flame, TrendingUp, TrendingDown, Activity, Zap, BarChart3, Loader2 } from 'lucide-react';
 
 export default function VolumePage() {
   const [stocks, setStocks] = useState<StreakAnalysis[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [filters, setFilters] = useState<FilterValues>({
+    activeRegion: 'nordic',
+    selectedCountries: ['sweden', 'usa', 'canada'], // Default to broad search
+    marketCapMin: 0,
+    marketCapMax: 500000,
+    minTurnover: 0
+  });
 
-  // Load data on mount
+  // Fetch data based on selected countries
   useEffect(() => {
     async function load() {
       setIsLoading(true);
       try {
-        // Fetch from all markets to find the best volume plays
-        // We fetch Sweden, USA, Canada to get a good mix
-        const [seRes, usRes, caRes] = await Promise.all([
-          fetch('/api/stocks?country=sweden'),
-          fetch('/api/stocks?country=usa'),
-          fetch('/api/stocks?country=canada')
-        ]);
+        const promises = filters.selectedCountries.map(async (country) => {
+          try {
+            const response = await fetch(`/api/stocks?country=${country}`);
+            if (!response.ok) return [];
+            const data = await response.json();
+            return Array.isArray(data) ? data : [];
+          } catch (error) {
+            console.error(`Error fetching ${country}:`, error);
+            return [];
+          }
+        });
         
-        const se = seRes.ok ? await seRes.json() : [];
-        const us = usRes.ok ? await usRes.json() : [];
-        const ca = caRes.ok ? await caRes.json() : [];
+        const results = await Promise.all(promises);
+        const allStocks = results.flat();
         
-        setStocks([...se, ...us, ...ca]);
+        // Remove duplicates based on symbol
+        const uniqueStocks = Array.from(
+          new Map(allStocks.map((stock: any) => [stock.symbol, stock])).values()
+        ) as StreakAnalysis[];
+        
+        setStocks(uniqueStocks);
       } catch (e) {
-        console.error(e);
+        console.error('Error loading stocks:', e);
         setStocks([]);
       } finally {
         setIsLoading(false);
       }
     }
     load();
-  }, []);
+  }, [filters.selectedCountries]);
 
-  // Helper: Calculate Relative Volume (RVOL)
-  // Since we might lack historical volume in the demo, we estimate RVOL 
-  // by comparing turnover vs market cap or using the raw turnoverSEK if available.
-  // Ideally: RVOL = CurrentVol / AvgVol. 
-  // For this fix, we will simulate RVOL based on turnover/marketcap ratio anomalies or use raw data if available.
+  // --- ANALYSIS LOGIC --- //
+  
+  // Calculate a mock "RVOL" (Relative Volume) score since we lack historical volume arrays in this demo.
+  // In a real app, this would be: CurrentVolume / AvgVolume20d.
+  // Here we simulate it based on Turnover/Cap ratio anomalies or raw turnover spikes.
   const getRVOL = (s: StreakAnalysis) => {
     // If we have rvol from technical analysis, use it
-    if (s.rvol !== undefined && s.rvol !== null) {
+    if (s.rvol !== undefined && s.rvol !== null && s.rvol > 0) {
       return s.rvol;
     }
     
-    // If we have normalized turnover, use it to find high activity
+    // Fallback: simulate based on turnover/market cap ratio
     if (!s.turnoverSEK || !s.marketCapSEK || s.marketCapSEK === 0) return 1.0;
     
-    // A simplified "Activity Score" for the demo
-    const ratio = (s.turnoverSEK / s.marketCapSEK) * 1000; 
-    return Math.min(Math.max(ratio, 0.5), 10); // Cap between 0.5x and 10x
+    // Basic simulation: Smaller caps usually have lower turnover ratios, so we normalize.
+    // This is just to demonstrate the UI sorting.
+    const activityRatio = (s.turnoverSEK / s.marketCapSEK) * 1000;
+    // Cap between 0.5x and 8.5x
+    return Math.min(Math.max(activityRatio, 0.5), 8.5); 
   };
 
-  // 1. High RVOL Stocks (> 2.0x relative activity)
-  const highRvolStocks = stocks
-    .map(s => ({ ...s, rvol: getRVOL(s) }))
+  const processedStocks = stocks.map(s => ({
+    ...s,
+    rvol: getRVOL(s)
+  }));
+
+  // 1. THE HOTLIST: High Activity (>2x RVOL)
+  const hotList = processedStocks
     .filter(s => s.rvol > 2.0)
     .sort((a, b) => b.rvol - a.rvol)
-    .slice(0, 10);
+    .slice(0, 15);
 
-  // 2. Capitulation (Panic Selling: Down > 4% with High Volume)
-  const panicStocks = stocks
-    .map(s => ({ ...s, rvol: getRVOL(s) }))
-    .filter(s => s.dailyChange < -4 && s.rvol > 1.5)
-    .sort((a, b) => a.dailyChange - b.dailyChange) // Most negative first
-    .slice(0, 10);
+  // 2. BREAKOUTS: Price Up + Volume Up
+  const breakouts = processedStocks
+    .filter(s => s.dailyChange > 2.5 && s.rvol > 1.5)
+    .sort((a, b) => b.dailyChange - a.dailyChange)
+    .slice(0, 5);
 
-  // 3. Power Breakouts (Up > 3% with High Volume)
-  const breakoutStocks = stocks
-    .map(s => ({ ...s, rvol: getRVOL(s) }))
-    .filter(s => s.dailyChange > 3 && s.rvol > 1.5)
-    .sort((a, b) => b.dailyChange - a.dailyChange) // Highest gain first
-    .slice(0, 10);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center text-white">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-      </div>
-    );
-  }
+  // 3. CAPITULATION: Price Down + Volume Up (Panic)
+  const panicList = processedStocks
+    .filter(s => s.dailyChange < -4.0 && s.rvol > 1.5)
+    .sort((a, b) => a.dailyChange - b.dailyChange)
+    .slice(0, 5);
 
   return (
-    <main className="min-h-screen bg-[#0f172a] text-white p-3 sm:p-6 font-sans pt-20">
-      <div className="max-w-7xl mx-auto">
+    <main className="min-h-screen bg-[#0f172a] text-white pb-20">
+      <div className="container mx-auto px-4 py-6">
         
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold flex items-center gap-2 mb-2">
-            <Activity className="text-blue-500" />
-            Market Volume Scanner
-          </h1>
-          <p className="text-slate-400">
-            Real-time liquidity analysis. Find where the money is flowing right now.
-          </p>
-        </div>
-
-        {/* Top Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <StatCard 
-            title="High Activity (>2x RVOL)" 
-            value={highRvolStocks.length.toString()} 
-            icon={<Flame className="text-orange-500" />} 
-          />
-          <StatCard 
-            title="Panic Sellers" 
-            value={panicStocks.length.toString()} 
-            icon={<TrendingDown className="text-red-500" />} 
-          />
-          <StatCard 
-            title="Breakouts" 
-            value={breakoutStocks.length.toString()} 
-            icon={<TrendingUp className="text-green-500" />} 
-          />
-        </div>
-
-        {/* The Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Header & Filter */}
+        <div className="mb-6 space-y-4">
+          <div className="flex items-center gap-3">
+             <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
+                <Activity className="w-8 h-8 text-blue-500" />
+             </div>
+             <div>
+               <h1 className="text-3xl font-bold text-white">Market Scanner</h1>
+               <p className="text-slate-400">Finding the hottest liquidity flows right now.</p>
+             </div>
+          </div>
           
-          {/* Main Column: High RVOL (Takes up 8 columns) */}
-          <div className="lg:col-span-8 bg-[#1e293b] rounded-xl border border-slate-700 overflow-hidden">
-            <div className="p-4 border-b border-slate-700 flex justify-between items-center">
-              <h2 className="font-bold flex items-center gap-2 text-orange-400">
-                <Flame className="w-4 h-4" /> Unusual Volume Hotlist
-              </h2>
-              <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded">Sorted by RVOL</span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-slate-800 text-slate-400 uppercase text-xs">
-                  <tr>
-                    <th className="p-3">Symbol</th>
-                    <th className="p-3 text-right">Price</th>
-                    <th className="p-3 text-right">Change</th>
-                    <th className="p-3 w-1/3">Volume Strength</th>
-                    <th className="p-3 text-right">RVOL</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-700">
-                  {highRvolStocks.map((stock) => (
-                    <tr key={stock.symbol} className="hover:bg-slate-750 transition">
-                      <td className="p-3 font-mono font-bold">{stock.symbol}</td>
-                      <td className="p-3 text-right">{stock.lastPrice?.toFixed(2)}</td>
-                      <td className={`p-3 text-right font-bold ${stock.dailyChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {stock.dailyChange > 0 ? '+' : ''}{stock.dailyChange?.toFixed(2)}%
-                      </td>
-                      <td className="p-3">
-                        <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-gradient-to-r from-blue-600 to-purple-500"
-                            style={{ width: `${Math.min(stock.rvol * 20, 100)}%` }}
-                          />
-                        </div>
-                      </td>
-                      <td className="p-3 text-right font-mono text-blue-300">{stock.rvol.toFixed(1)}x</td>
-                    </tr>
-                  ))}
-                  {highRvolStocks.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="p-8 text-center text-slate-500">No unusual volume detected right now.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Side Column: Signals (Takes up 4 columns) */}
-          <div className="lg:col-span-4 flex flex-col gap-6">
-            
-            {/* Panic Selling Card */}
-            <div className="bg-[#1e293b] rounded-xl border border-slate-700 overflow-hidden">
-              <div className="p-4 border-b border-slate-700">
-                <h2 className="font-bold flex items-center gap-2 text-red-400">
-                  <AlertTriangle className="w-4 h-4" /> Capitulation (Buy?)
-                </h2>
-              </div>
-              <div className="divide-y divide-slate-700">
-                {panicStocks.map(stock => (
-                  <div key={stock.symbol} className="p-3 hover:bg-slate-800 transition flex justify-between items-center">
-                    <div>
-                      <div className="font-bold">{stock.symbol}</div>
-                      <div className="text-xs text-slate-400">{stock.name}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-red-500 font-bold">{stock.dailyChange?.toFixed(2)}%</div>
-                      <div className="text-xs text-slate-500">Vol: {stock.rvol.toFixed(1)}x</div>
-                    </div>
-                  </div>
-                ))}
-                {panicStocks.length === 0 && (
-                  <div className="p-4 text-center text-slate-500 text-sm">No panic selling detected.</div>
-                )}
-              </div>
-            </div>
-
-            {/* Breakouts Card */}
-            <div className="bg-[#1e293b] rounded-xl border border-slate-700 overflow-hidden">
-              <div className="p-4 border-b border-slate-700">
-                <h2 className="font-bold flex items-center gap-2 text-green-400">
-                  <BarChart3 className="w-4 h-4" /> Power Breakouts
-                </h2>
-              </div>
-              <div className="divide-y divide-slate-700">
-                {breakoutStocks.map(stock => (
-                  <div key={stock.symbol} className="p-3 hover:bg-slate-800 transition flex justify-between items-center">
-                    <div>
-                      <div className="font-bold">{stock.symbol}</div>
-                      <div className="text-xs text-slate-400">{stock.name}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-green-500 font-bold">+{stock.dailyChange?.toFixed(2)}%</div>
-                      <div className="text-xs text-slate-500">Vol: {stock.rvol.toFixed(1)}x</div>
-                    </div>
-                  </div>
-                ))}
-                 {breakoutStocks.length === 0 && (
-                  <div className="p-4 text-center text-slate-500 text-sm">No breakouts detected.</div>
-                )}
-              </div>
-            </div>
-
-          </div>
+          <StockSelector 
+            onFilterChange={setFilters} 
+            isLoading={isLoading} 
+          />
         </div>
+
+        {isLoading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            {/* --- MAIN SECTION: THE HEATMAP LIST (8 Cols) --- */}
+            <div className="lg:col-span-8 space-y-6">
+              
+              {/* Top Stats Row */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <StatBox label="Active Stocks" value={hotList.length} icon={<Zap className="text-yellow-500" />} />
+                <StatBox label="Breakouts" value={breakouts.length} icon={<TrendingUp className="text-green-500" />} />
+                <StatBox label="Panic Sells" value={panicList.length} icon={<TrendingDown className="text-red-500" />} />
+                <StatBox label="Avg RVOL" value={hotList.length > 0 ? `${(hotList.reduce((sum, s) => sum + s.rvol, 0) / hotList.length).toFixed(1)}x` : '0.0x'} icon={<BarChart3 className="text-blue-500" />} />
+              </div>
+
+              {/* The Visual Table */}
+              <div className="bg-[#1e293b] rounded-xl border border-slate-700 overflow-hidden">
+                <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+                  <h2 className="font-bold flex items-center gap-2 text-white">
+                    <Flame className="w-5 h-5 text-orange-500" />
+                    Unusual Volume (RVOL)
+                  </h2>
+                  <span className="text-xs font-mono text-slate-400">SORT: INTENSITY</span>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs text-slate-400 uppercase bg-slate-800/50">
+                      <tr>
+                        <th className="p-4">Symbol</th>
+                        <th className="p-4 text-right">Price</th>
+                        <th className="p-4 text-right">Change</th>
+                        <th className="p-4 w-1/3">Activity Intensity</th>
+                        <th className="p-4 text-right">RVOL</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-700/50">
+                      {hotList.map((stock) => (
+                        <tr key={stock.symbol} className="hover:bg-slate-700/30 transition group">
+                          <td className="p-4">
+                            <div className="font-bold font-mono text-white text-base">{stock.symbol}</div>
+                            <div className="text-xs text-slate-500 truncate max-w-[120px]">{stock.name}</div>
+                          </td>
+                          <td className="p-4 text-right font-mono text-slate-300">
+                            {stock.lastPrice?.toFixed(2) || 'N/A'}
+                          </td>
+                          <td className="p-4 text-right">
+                            <span className={`px-2 py-1 rounded-md text-xs font-bold font-mono ${
+                              (stock.dailyChange ?? 0) > 0 
+                                ? 'bg-green-500/10 text-green-400 border border-green-500/20' 
+                                : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                            }`}>
+                              {(stock.dailyChange ?? 0) > 0 ? '+' : ''}{(stock.dailyChange ?? 0).toFixed(2)}%
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex flex-col gap-1">
+                              <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-gradient-to-r from-blue-600 via-purple-500 to-orange-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]"
+                                  style={{ width: `${Math.min(stock.rvol * 15, 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4 text-right font-mono font-bold text-white">
+                            {stock.rvol.toFixed(1)}x
+                          </td>
+                        </tr>
+                      ))}
+                      {hotList.length === 0 && (
+                        <tr><td colSpan={5} className="p-8 text-center text-slate-500">No unusual activity found.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* --- SIDEBAR: SIGNALS (4 Cols) --- */}
+            <div className="lg:col-span-4 space-y-6">
+              
+              {/* Panic Card */}
+              <div className="bg-[#1e293b] rounded-xl border border-slate-700 overflow-hidden">
+                <div className="p-4 border-b border-slate-700 bg-red-500/5">
+                  <h3 className="font-bold flex items-center gap-2 text-red-400">
+                    <TrendingDown className="w-4 h-4" /> Capitulation
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">Crashing on high volume (Potential Reversal)</p>
+                </div>
+                <div className="divide-y divide-slate-700">
+                  {panicList.map(s => <SignalRow key={s.symbol} stock={s} type="bear" />)}
+                  {panicList.length === 0 && <EmptyState />}
+                </div>
+              </div>
+
+              {/* Breakout Card */}
+              <div className="bg-[#1e293b] rounded-xl border border-slate-700 overflow-hidden">
+                <div className="p-4 border-b border-slate-700 bg-green-500/5">
+                  <h3 className="font-bold flex items-center gap-2 text-green-400">
+                    <TrendingUp className="w-4 h-4" /> Power Breakouts
+                  </h3>
+                   <p className="text-xs text-slate-500 mt-1">Surging on high volume (Momentum)</p>
+                </div>
+                <div className="divide-y divide-slate-700">
+                  {breakouts.map(s => <SignalRow key={s.symbol} stock={s} type="bull" />)}
+                  {breakouts.length === 0 && <EmptyState />}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
 }
 
-function StatCard({ title, value, icon }: { title: string, value: string, icon: React.ReactNode }) {
-  return (
-    <div className="bg-[#1e293b] p-4 rounded-xl border border-slate-700 flex items-center justify-between">
-      <div>
-        <p className="text-slate-400 text-sm">{title}</p>
-        <p className="text-2xl font-bold mt-1">{value}</p>
-      </div>
-      <div className="p-3 bg-slate-800 rounded-lg">{icon}</div>
+// --- Sub Components ---
+
+const StatBox = ({ label, value, icon }: { label: string; value: string | number; icon: React.ReactNode }) => (
+  <div className="bg-[#1e293b] p-3 rounded-xl border border-slate-700 flex items-center justify-between">
+    <div>
+      <div className="text-slate-500 text-[10px] uppercase font-bold">{label}</div>
+      <div className="text-xl font-mono font-bold text-white mt-1">{value}</div>
     </div>
-  );
-}
+    <div className="opacity-80">{icon}</div>
+  </div>
+);
+
+const SignalRow = ({ stock, type }: { stock: StreakAnalysis, type: 'bull'|'bear' }) => (
+  <div className="p-3 hover:bg-slate-700/50 transition flex justify-between items-center group cursor-pointer">
+    <div>
+      <div className="font-bold font-mono text-white text-sm">{stock.symbol}</div>
+      <div className="text-[10px] text-slate-500">{stock.name ? stock.name.substring(0, 15) + '...' : ''}</div>
+    </div>
+    <div className="text-right">
+      <div className={`font-mono font-bold text-sm ${type === 'bull' ? 'text-green-400' : 'text-red-400'}`}>
+        {(stock.dailyChange ?? 0) > 0 ? '+' : ''}{(stock.dailyChange ?? 0).toFixed(2)}%
+      </div>
+      <div className="text-[10px] text-slate-400">
+        Vol: <span className="text-white">{stock.rvol.toFixed(1)}x</span>
+      </div>
+    </div>
+  </div>
+);
+
+const EmptyState = () => (
+  <div className="p-4 text-center text-slate-500 text-xs italic">No signals detected.</div>
+);

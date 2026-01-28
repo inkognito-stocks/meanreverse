@@ -5,7 +5,7 @@ import { STOCK_LISTS } from '../../../lib/stockLists';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const country = (searchParams.get('country') as 'sweden' | 'canada' | 'usa') || 'sweden';
+  const country = (searchParams.get('country') as 'sweden' | 'norway' | 'denmark' | 'finland' | 'canada' | 'usa') || 'sweden';
   const capSize = (searchParams.get('capSize') as 'large' | 'mid' | 'small') || 'large';
 
   console.log(`API called with country: ${country}, capSize: ${capSize}`);

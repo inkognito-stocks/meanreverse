@@ -5,7 +5,7 @@ import { DailyData } from '../types/stock';
 // Sverige: VOLV-B -> VOLV-B.ST
 // Kanada: RY.TO -> RY.TO (redan korrekt i listan)
 // USA: AAPL -> AAPL (ingen ändring)
-function toYahooSymbol(symbol: string, country: 'sweden' | 'canada' | 'usa' = 'sweden'): string {
+function toYahooSymbol(symbol: string, country: 'sweden' | 'norway' | 'denmark' | 'finland' | 'canada' | 'usa' = 'sweden'): string {
   // Om symbolen redan har ett suffix, använd den som den är
   if (symbol.includes('.')) {
     return symbol; // Redan i rätt format (t.ex. RY.TO eller VOLV-B.ST)
@@ -15,6 +15,12 @@ function toYahooSymbol(symbol: string, country: 'sweden' | 'canada' | 'usa' = 's
   switch (country) {
     case 'sweden':
       return `${symbol}.ST`; // Stockholmsbörsen
+    case 'norway':
+      return `${symbol}.OL`; // Oslo Børs
+    case 'denmark':
+      return `${symbol}.CO`; // Copenhagen
+    case 'finland':
+      return `${symbol}.HE`; // Helsinki
     case 'canada':
       // Kanadensiska symboler i listan har redan .TO suffix
       // Men om någon saknas, lägg till det
@@ -30,7 +36,7 @@ function toYahooSymbol(symbol: string, country: 'sweden' | 'canada' | 'usa' = 's
 export async function fetchStockHistory(
   symbol: string,
   period: number = 252, // Antal dagar (ca 1 år)
-  country: 'sweden' | 'canada' | 'usa' = 'sweden'
+  country: 'sweden' | 'norway' | 'denmark' | 'finland' | 'canada' | 'usa' = 'sweden'
 ): Promise<DailyData[]> {
   const yahooSymbol = toYahooSymbol(symbol, country);
   
@@ -103,7 +109,7 @@ export async function fetchStockHistory(
 // Hämtar aktuell information om en aktie
 export async function fetchStockInfo(
   symbol: string,
-  country: 'sweden' | 'canada' | 'usa' = 'sweden'
+  country: 'sweden' | 'norway' | 'denmark' | 'finland' | 'canada' | 'usa' = 'sweden'
 ): Promise<{
   name: string;
   price: number;

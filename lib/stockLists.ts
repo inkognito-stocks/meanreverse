@@ -206,11 +206,47 @@ export const USA_SMALL_CAP = [
 // Exporterade listor organiserade per land
 // ============================================
 
+// ============================================
+// NORGE (Oslo Børs)
+// ============================================
+export const NORWAY_LARGE_CAP: string[] = []; // TODO: Add Norwegian stocks
+export const NORWAY_MID_CAP: string[] = []; // TODO: Add Norwegian stocks
+export const NORWAY_SMALL_CAP: string[] = []; // TODO: Add Norwegian stocks
+
+// ============================================
+// DANMARK (Copenhagen)
+// ============================================
+export const DENMARK_LARGE_CAP: string[] = []; // TODO: Add Danish stocks
+export const DENMARK_MID_CAP: string[] = []; // TODO: Add Danish stocks
+export const DENMARK_SMALL_CAP: string[] = []; // TODO: Add Danish stocks
+
+// ============================================
+// FINLAND (Helsinki)
+// ============================================
+export const FINLAND_LARGE_CAP: string[] = []; // TODO: Add Finnish stocks
+export const FINLAND_MID_CAP: string[] = []; // TODO: Add Finnish stocks
+export const FINLAND_SMALL_CAP: string[] = []; // TODO: Add Finnish stocks
+
 export const STOCK_LISTS = {
   sweden: {
     large: SWEDEN_LARGE_CAP,
     mid: SWEDEN_MID_CAP,
     small: SWEDEN_SMALL_CAP,
+  },
+  norway: {
+    large: NORWAY_LARGE_CAP,
+    mid: NORWAY_MID_CAP,
+    small: NORWAY_SMALL_CAP,
+  },
+  denmark: {
+    large: DENMARK_LARGE_CAP,
+    mid: DENMARK_MID_CAP,
+    small: DENMARK_SMALL_CAP,
+  },
+  finland: {
+    large: FINLAND_LARGE_CAP,
+    mid: FINLAND_MID_CAP,
+    small: FINLAND_SMALL_CAP,
   },
   canada: {
     large: CANADA_LARGE_CAP,

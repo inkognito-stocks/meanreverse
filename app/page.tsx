@@ -9,12 +9,12 @@ import { StreakAnalysis } from '../types/stock';
 export default function Home() {
   const [stocks, setStocks] = useState<StreakAnalysis[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentCountries, setCurrentCountries] = useState<('sweden' | 'canada' | 'usa')[]>(['sweden']);
+  const [currentCountries, setCurrentCountries] = useState<('sweden' | 'norway' | 'denmark' | 'finland' | 'canada' | 'usa')[]>(['sweden']);
   const [currentCapSizes, setCurrentCapSizes] = useState<('large' | 'mid' | 'small')[]>(['large']);
 
   // Använd useCallback för att stabilisera fetchStocks och undvika oändlig loop
   const fetchStocks = useCallback(async (
-    countries: ('sweden' | 'canada' | 'usa')[],
+    countries: ('sweden' | 'norway' | 'denmark' | 'finland' | 'canada' | 'usa')[],
     capSizes: ('large' | 'mid' | 'small')[]
   ) => {
     setIsLoading(true);
@@ -92,7 +92,7 @@ export default function Home() {
 
   // Använd useCallback för att stabilisera funktionsreferensen och undvika oändlig loop
   const handleSelectionChange = useCallback((
-    countries: ('sweden' | 'canada' | 'usa')[],
+    countries: ('sweden' | 'norway' | 'denmark' | 'finland' | 'canada' | 'usa')[],
     capSizes: ('large' | 'mid' | 'small')[]
   ) => {
     setCurrentCountries(countries);

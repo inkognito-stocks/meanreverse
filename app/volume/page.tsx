@@ -104,30 +104,38 @@ export default function VolumePage() {
   }, [fetchStocks]);
 
   // Calculate stats
-  const stats: VolumeStats = useMemo(() => ({
-    highRVOL: allStocks.filter(s => (s.rvol ?? 0) > 2.0).length,
-    liquidityCrunch: allStocks.filter(s => (s.rvol ?? 0) < 0.5 && (s.avgVolume ?? 0) > 0).length,
-    capitalFlow: allStocks.reduce((sum, s) => {
-      const volume = s.turnoverSEK || 0;
-      return sum + (s.dailyChange > 0 ? volume : -volume);
-    }, 0),
-  }), [allStocks]);
+  const stats: VolumeStats = useMemo(() => {
+    return {
+      highRVOL: allStocks.filter(s => (s.rvol ?? 0) > 2.0).length,
+      liquidityCrunch: allStocks.filter(s => (s.rvol ?? 0) < 0.5 && (s.avgVolume ?? 0) > 0).length,
+      capitalFlow: allStocks.reduce((sum, s) => {
+        const volume = s.turnoverSEK || 0;
+        return sum + (s.dailyChange > 0 ? volume : -volume);
+      }, 0),
+    };
+  }, [allStocks]);
 
   // Filter and sort for each scanner
-  const unusualVolume = useMemo(() => allStocks
-    .filter(s => (s.rvol ?? 0) > 2.0)
-    .sort((a, b) => (b.rvol ?? 0) - (a.rvol ?? 0))
-    .slice(0, 20), [allStocks]);
+  const unusualVolume = useMemo(() => {
+    return allStocks
+      .filter(s => (s.rvol ?? 0) > 2.0)
+      .sort((a, b) => (b.rvol ?? 0) - (a.rvol ?? 0))
+      .slice(0, 20);
+  }, [allStocks]);
 
-  const capitulation = useMemo(() => allStocks
-    .filter(s => s.dailyChange < -4 && (s.rvol ?? 0) > 1.5)
-    .sort((a, b) => a.dailyChange - b.dailyChange)
-    .slice(0, 20), [allStocks]);
+  const capitulation = useMemo(() => {
+    return allStocks
+      .filter(s => s.dailyChange < -4 && (s.rvol ?? 0) > 1.5)
+      .sort((a, b) => a.dailyChange - b.dailyChange)
+      .slice(0, 20);
+  }, [allStocks]);
 
-  const powerBreakouts = useMemo(() => allStocks
-    .filter(s => s.dailyChange > 3 && (s.rvol ?? 0) > 1.5)
-    .sort((a, b) => b.dailyChange - a.dailyChange)
-    .slice(0, 20), [allStocks]);
+  const powerBreakouts = useMemo(() => {
+    return allStocks
+      .filter(s => s.dailyChange > 3 && (s.rvol ?? 0) > 1.5)
+      .sort((a, b) => b.dailyChange - a.dailyChange)
+      .slice(0, 20);
+  }, [allStocks]);
 
   return (
     <main>

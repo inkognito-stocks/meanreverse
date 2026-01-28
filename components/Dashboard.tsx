@@ -159,15 +159,6 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
     }
   };
 
-  const SortIcon = ({ column }: { column: SortColumn }) => {
-    if (sortColumn !== column) {
-      return <ChevronDown className="w-4 h-4 opacity-30" />;
-    }
-    return sortDirection === 'asc' ? 
-      <ChevronUp className="w-4 h-4" /> : 
-      <ChevronDown className="w-4 h-4" />;
-  };
-
   // Conditional returns EFTER alla hooks
   if (isLoading) {
     return (

@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Filter } from 'lucide-react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { SlidersHorizontal, X } from 'lucide-react';
 
 export interface FilterValues {
   activeRegion: 'nordic' | 'na';
@@ -14,173 +16,222 @@ interface StockSelectorProps {
   isLoading: boolean;
 }
 
-const NORDIC_COUNTRIES = [
-  { id: 'sweden', label: 'Sweden', flag: '🇸🇪' },
-  { id: 'norway', label: 'Norway', flag: '🇳🇴' },
-  { id: 'denmark', label: 'Denmark', flag: '🇩🇰' },
-  { id: 'finland', label: 'Finland', flag: '🇫🇮' },
-];
-
-const NA_COUNTRIES = [
-  { id: 'usa', label: 'USA', flag: '🇺🇸' },
-  { id: 'canada', label: 'Canada', flag: '🇨🇦' },
+const ALL_COUNTRIES = [
+  { id: 'sweden', label: 'SE', flag: '🇸🇪', name: 'Sweden' },
+  { id: 'norway', label: 'NO', flag: '🇳🇴', name: 'Norway' },
+  { id: 'denmark', label: 'DK', flag: '🇩🇰', name: 'Denmark' },
+  { id: 'finland', label: 'FI', flag: '🇫🇮', name: 'Finland' },
+  { id: 'usa', label: 'US', flag: '🇺🇸', name: 'USA' },
+  { id: 'canada', label: 'CA', flag: '🇨🇦', name: 'Canada' },
 ];
 
 export const StockSelector: React.FC<StockSelectorProps> = ({ onFilterChange, isLoading }) => {
-  const [activeRegion, setActiveRegion] = useState<'nordic' | 'na'>('nordic');
   const [selectedCountries, setSelectedCountries] = useState<string[]>(['sweden']);
-  const [showAdvanced, setShowAdvanced] = useState(false);
-
-  // Numeric Filters State
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  
+  // Filter state
   const [minTurnover, setMinTurnover] = useState<number>(0);
   const [mcMin, setMcMin] = useState<number>(0);
-  const [mcMax, setMcMax] = useState<number>(500000); // Default 500 miljarder
+  const [mcMax, setMcMax] = useState<number>(500000); // Default 500 miljarder MSEK
 
-  const handleUpdate = (
-    newRegion = activeRegion, 
-    newCountries = selectedCountries,
-    newTurnover = minTurnover,
-    newMcMin = mcMin,
-    newMcMax = mcMax
-  ) => {
+  // Determine active region based on selected countries
+  const activeRegion: 'nordic' | 'na' = selectedCountries.some(c => ['usa', 'canada'].includes(c))
+    ? 'na'
+    : 'nordic';
+
+  const handleUpdate = () => {
     onFilterChange({
-      activeRegion: newRegion,
-      selectedCountries: newCountries,
-      minTurnover: newTurnover,
-      marketCapMin: newMcMin,
-      marketCapMax: newMcMax
+      activeRegion,
+      selectedCountries,
+      minTurnover,
+      marketCapMin: mcMin,
+      marketCapMax: mcMax,
     });
   };
 
   const toggleCountry = (id: string) => {
-    const newSelection = selectedCountries.includes(id)
-      ? selectedCountries.filter(c => c !== id)
-      : [...selectedCountries, id];
-    
-    setSelectedCountries(newSelection);
-    handleUpdate(activeRegion, newSelection);
+    setSelectedCountries(prev => {
+      const newSelection = prev.includes(id)
+        ? prev.filter(c => c !== id)
+        : [...prev, id];
+      
+      // Ensure at least one country is selected
+      if (newSelection.length === 0) {
+        return prev;
+      }
+      
+      return newSelection;
+    });
   };
 
-  const switchRegion = (region: 'nordic' | 'na') => {
-    setActiveRegion(region);
-    const defaultCountry = region === 'nordic' ? ['sweden'] : ['usa'];
-    setSelectedCountries(defaultCountry);
-    handleUpdate(region, defaultCountry);
+  // Apply quick preset
+  const applyPreset = (preset: 'small' | 'mid' | 'large') => {
+    switch (preset) {
+      case 'small':
+        setMcMin(0);
+        setMcMax(10000); // 0-10B MSEK
+        break;
+      case 'mid':
+        setMcMin(10000);
+        setMcMax(100000); // 10B-100B MSEK
+        break;
+      case 'large':
+        setMcMin(100000);
+        setMcMax(500000); // 100B+ MSEK
+        break;
+    }
   };
 
-  const availableCountries = activeRegion === 'nordic' ? NORDIC_COUNTRIES : NA_COUNTRIES;
+  // Update filters when state changes
+  useEffect(() => {
+    handleUpdate();
+  }, [selectedCountries, minTurnover, mcMin, mcMax]);
 
   return (
-    <div className="bg-[#1e293b] p-4 rounded-xl border border-slate-700 mb-6 shadow-sm">
-      {/* 1. Region Tabs */}
-      <div className="grid grid-cols-2 gap-2 mb-4">
+    <>
+      {/* Main Header Row */}
+      <div className="flex items-center gap-3 mb-4">
+        {/* Country Scroller */}
+        <div className="flex-1 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-2 pb-2">
+            {ALL_COUNTRIES.map((country) => {
+              const isActive = selectedCountries.includes(country.id);
+              return (
+                <button
+                  key={country.id}
+                  onClick={() => toggleCountry(country.id)}
+                  disabled={isLoading}
+                  className={`flex-shrink-0 flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-full transition-all min-w-[70px] ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  <span className="text-2xl">{country.flag}</span>
+                  <span className="text-xs font-medium">{country.label}</span>
+                  {isActive && (
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-400 mt-0.5" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Filter Button */}
         <button
-          onClick={() => switchRegion('nordic')}
-          className={`py-3 px-4 rounded-lg font-bold text-sm transition-all ${
-            activeRegion === 'nordic' 
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-750'
-          }`}
+          onClick={() => setShowFilterModal(true)}
+          disabled={isLoading}
+          className="flex-shrink-0 p-3 bg-slate-800 border border-slate-700 rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label="Öppna filter"
         >
-          Nordic Markets
-        </button>
-        <button
-          onClick={() => switchRegion('na')}
-          className={`py-3 px-4 rounded-lg font-bold text-sm transition-all ${
-            activeRegion === 'na' 
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-750'
-          }`}
-        >
-          North America
+          <SlidersHorizontal className="w-5 h-5 text-slate-300" />
         </button>
       </div>
 
-      {/* 2. Country Pills */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        {availableCountries.map((country) => {
-          const isActive = selectedCountries.includes(country.id);
-          return (
-            <button
-              key={country.id}
-              onClick={() => toggleCountry(country.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all ${
-                isActive
-                  ? 'bg-slate-700 border-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.15)]'
-                  : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'
-              }`}
-            >
-              <span>{country.flag}</span>
-              {country.label}
-              {isActive && <div className="w-1.5 h-1.5 rounded-full bg-green-500 ml-1" />}
-            </button>
-          );
-        })}
-      </div>
+      {/* Filter Modal */}
+      {showFilterModal && (
+        <>
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 bg-black/60 z-50"
+            onClick={() => setShowFilterModal(false)}
+          />
 
-      {/* 3. Advanced Filters Toggle */}
-      <div>
-        <button 
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white mb-2 transition-colors"
-        >
-          <Filter className="w-3 h-3" />
-          ADVANCED FILTERS
-          {showAdvanced ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-        </button>
+          {/* Modal */}
+          <div className="fixed inset-x-0 bottom-0 bg-[#1e293b] border-t border-slate-700 rounded-t-xl z-50 max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-white">Filter</h2>
+                <button
+                  onClick={() => setShowFilterModal(false)}
+                  className="p-2 text-slate-400 hover:text-white transition-colors"
+                  aria-label="Stäng"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-        {showAdvanced && (
-          <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700 grid gap-4 animate-in fade-in slide-in-from-top-2">
-            
-            {/* Turnover Input */}
-            <div>
-              <label className="block text-xs text-slate-400 mb-1">Min. Daily Turnover (SEK)</label>
-              <input 
-                type="number"
-                value={minTurnover}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  setMinTurnover(val);
-                  handleUpdate(undefined, undefined, val);
-                }}
-                className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:border-blue-500 outline-none"
-                placeholder="e.g. 1000000"
-              />
-            </div>
+              {/* Quick Presets */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-300 mb-3">
+                  Snabbval
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => applyPreset('small')}
+                    className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+                  >
+                    Small Cap
+                  </button>
+                  <button
+                    onClick={() => applyPreset('mid')}
+                    className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+                  >
+                    Mid Cap
+                  </button>
+                  <button
+                    onClick={() => applyPreset('large')}
+                    className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+                  >
+                    Large Cap
+                  </button>
+                </div>
+              </div>
 
-            {/* Market Cap Range */}
-            <div>
-              <label className="block text-xs text-slate-400 mb-1">Market Cap Range (MSEK)</label>
-              <div className="flex items-center gap-2">
-                <input 
+              {/* Market Cap Range */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-300 mb-3">
+                  Börsvärde (MSEK)
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    value={mcMin}
+                    onChange={(e) => setMcMin(Math.max(0, Number(e.target.value)))}
+                    disabled={isLoading}
+                    placeholder="Min"
+                    className="flex-1 px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                  <span className="text-slate-500 text-sm">-</span>
+                  <input
+                    type="number"
+                    value={mcMax}
+                    onChange={(e) => setMcMax(Math.max(mcMin, Number(e.target.value)))}
+                    disabled={isLoading}
+                    placeholder="Max"
+                    className="flex-1 px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              {/* Min Turnover */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-300 mb-3">
+                  Min. Omsättning (SEK)
+                </label>
+                <input
                   type="number"
-                  value={mcMin}
-                  onChange={(e) => {
-                    const val = Number(e.target.value);
-                    setMcMin(val);
-                    handleUpdate(undefined, undefined, undefined, val, mcMax);
-                  }}
-                  className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:border-blue-500 outline-none"
-                  placeholder="Min"
-                />
-                <span className="text-slate-500">-</span>
-                <input 
-                  type="number"
-                  value={mcMax}
-                  onChange={(e) => {
-                    const val = Number(e.target.value);
-                    setMcMax(val);
-                    handleUpdate(undefined, undefined, undefined, mcMin, val);
-                  }}
-                  className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:border-blue-500 outline-none"
-                  placeholder="Max"
+                  value={minTurnover}
+                  onChange={(e) => setMinTurnover(Math.max(0, Number(e.target.value)))}
+                  disabled={isLoading}
+                  placeholder="0"
+                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 />
               </div>
+
+              {/* Footer Button */}
+              <button
+                onClick={() => setShowFilterModal(false)}
+                className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                Visa Resultat
+              </button>
             </div>
-            
           </div>
-        )}
-      </div>
-    </div>
+        </>
+      )}
+    </>
   );
 };

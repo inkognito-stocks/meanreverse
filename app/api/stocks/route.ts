@@ -3,16 +3,6 @@ import { analyzeStock } from '../../../lib/calculations';
 import { fetchStockHistory, fetchStockInfo } from '../../../lib/googleFinance';
 import { STOCK_LISTS } from '../../../lib/stockLists';
 
-// Market cap thresholds in SEK (normalized)
-// Large Cap: > $10B USD = > 105B SEK
-// Mid Cap: $1B - $10B USD = 10.5B - 105B SEK
-// Small Cap: < $1B USD = < 10.5B SEK
-const MARKET_CAP_THRESHOLDS_SEK = {
-  large: 105_000_000_000,  // > 105B SEK (> $10B USD)
-  mid: 10_500_000_000,     // 10.5B - 105B SEK ($1B - $10B USD)
-  small: 0,                // < 10.5B SEK (< $1B USD)
-};
-
 // Get all stocks for a country (including TSXV/CSE for Canada)
 function getAllStocksForCountry(country: 'sweden' | 'norway' | 'denmark' | 'finland' | 'canada' | 'usa'): string[] {
   const countryLists = STOCK_LISTS[country];
@@ -37,26 +27,11 @@ function getAllStocksForCountry(country: 'sweden' | 'norway' | 'denmark' | 'finl
   ];
 }
 
-// Filter stocks by market cap (using SEK values)
-function filterByMarketCap(marketCapSEK: number, capSize: 'large' | 'mid' | 'small'): boolean {
-  switch (capSize) {
-    case 'large':
-      return marketCapSEK >= MARKET_CAP_THRESHOLDS_SEK.large;
-    case 'mid':
-      return marketCapSEK >= MARKET_CAP_THRESHOLDS_SEK.mid && marketCapSEK < MARKET_CAP_THRESHOLDS_SEK.large;
-    case 'small':
-      return marketCapSEK < MARKET_CAP_THRESHOLDS_SEK.mid;
-    default:
-      return false;
-  }
-}
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const country = (searchParams.get('country') as 'sweden' | 'norway' | 'denmark' | 'finland' | 'canada' | 'usa') || 'sweden';
-  const capSize = (searchParams.get('capSize') as 'large' | 'mid' | 'small') || 'large';
 
-  console.log(`API called with country: ${country}, capSize: ${capSize} (market cap filtering)`);
+  console.log(`API called with country: ${country} (no server-side filtering - done client-side)`);
 
   try {
     const analyses = [];
@@ -67,22 +42,20 @@ export async function GET(request: Request) {
     if (allStocks.length === 0) {
       console.error(`No stocks found for country: ${country}`);
       return NextResponse.json(
-        { error: 'No stocks found for selected country', country, capSize },
+        { error: 'No stocks found for selected country', country },
         { status: 404 }
       );
     }
     
     console.log(`Found ${allStocks.length} total stocks for ${country}`);
-    console.log(`Filtering by market cap: ${capSize} (${capSize === 'large' ? '> $10B' : capSize === 'mid' ? '$1B-$10B' : '< $1B'})`);
     
-    // Limit to first 50 stocks to avoid too many requests
-    const symbolsToFetch = allStocks.slice(0, 50);
+    // Limit to first 100 stocks to avoid too many requests (increased since filtering is client-side)
+    const symbolsToFetch = allStocks.slice(0, 100);
     
     console.log(`Processing ${symbolsToFetch.length} symbols`);
 
     let successCount = 0;
     let failCount = 0;
-    let filteredOutByCap = 0;
 
     for (const symbol of symbolsToFetch) {
       try {
@@ -124,14 +97,7 @@ export async function GET(request: Request) {
           continue;
         }
         
-        // Filter by market cap AFTER normalization (using SEK values)
-        if (!filterByMarketCap(analysis.marketCapSEK, capSize)) {
-          console.log(`Skipping ${symbol}: market cap ${analysis.marketCapSEK} SEK doesn't match ${capSize} filter`);
-          filteredOutByCap++;
-          continue;
-        }
-        
-        // Add to results
+        // Add to results (no server-side filtering - done client-side)
         analyses.push(analysis);
         successCount++;
         console.log(`✓ Successfully analyzed ${symbol} (${info.name}) - Market Cap: ${(analysis.marketCapSEK / 1_000_000_000).toFixed(2)}B SEK`);
@@ -143,7 +109,7 @@ export async function GET(request: Request) {
       }
     }
 
-    console.log(`Completed: ${successCount} successful, ${failCount} failed, ${filteredOutByCap} filtered by market cap, returning ${analyses.length} analyses`);
+    console.log(`Completed: ${successCount} successful, ${failCount} failed, returning ${analyses.length} analyses`);
     return NextResponse.json(analyses.sort((a, b) => b.currentStreak - a.currentStreak));
   } catch (error: any) {
     console.error('Error fetching stocks:', error);

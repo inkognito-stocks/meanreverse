@@ -96,7 +96,8 @@ export function analyzeStock(
     dailyChange,
     totalDecline,
     zScore: Math.round(zScore * 10) / 10, // Avrunda till en decimal
-    marketCap: marketCap || 0, // Original market cap in original currency
+    marketCap: marketCap || 0, // Original market cap in original currency (raw value)
+    turnover: avgTurnover, // Average turnover in original currency (raw value)
     currency: currency,
     marketCapSEK: marketCapSEK, // Normalized to SEK for filtering/sorting
     turnoverSEK: avgTurnoverSEK, // Normalized to SEK for filtering/sorting

@@ -3,66 +3,67 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Dashboard } from '../components/Dashboard';
 import { ServiceWorkerRegistration } from '../components/ServiceWorkerRegistration';
-import { StockSelector } from '../components/StockSelector';
+import { StockSelector, FilterValues } from '../components/StockSelector';
 import { StreakAnalysis } from '../types/stock';
 
 export default function Home() {
   const [stocks, setStocks] = useState<StreakAnalysis[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentCountries, setCurrentCountries] = useState<('sweden' | 'norway' | 'denmark' | 'finland' | 'canada' | 'usa')[]>(['sweden']);
-  const [currentCapSizes, setCurrentCapSizes] = useState<('large' | 'mid' | 'small')[]>(['large']);
+  const [currentFilters, setCurrentFilters] = useState<FilterValues>({
+    marketCapMin: 0,
+    marketCapMax: 1000000,
+    minTurnover: 1000000,
+  });
 
   // Använd useCallback för att stabilisera fetchStocks och undvika oändlig loop
   const fetchStocks = useCallback(async (
-    countries: ('sweden' | 'norway' | 'denmark' | 'finland' | 'canada' | 'usa')[],
-    capSizes: ('large' | 'mid' | 'small')[]
+    countries: ('sweden' | 'norway' | 'denmark' | 'finland' | 'canada' | 'usa')[]
   ) => {
     setIsLoading(true);
     // Rensa gamla aktier när nya hämtas för att undvika att visa fel data
     setStocks([]);
-    console.log(`Fetching stocks for: ${countries.join(', ')} - ${capSizes.join(', ')}`);
+    console.log(`Fetching stocks for: ${countries.join(', ')}`);
     
     try {
       const allStocks: StreakAnalysis[] = [];
 
-      // Hämta aktier för varje kombination av land och kapitalstorlek
+      // Hämta aktier för varje land (no cap size filtering - done client-side)
       for (const country of countries) {
-        for (const capSize of capSizes) {
-          try {
-            const url = `/api/stocks?country=${country}&capSize=${capSize}`;
-            console.log(`Fetching from: ${url}`);
-            
-            const response = await fetch(url);
-            
-            if (!response.ok) {
-              const errorData = await response.json().catch(() => ({}));
-              console.error(`API error for ${country} ${capSize}:`, response.status, errorData);
-              continue; // Fortsätt med nästa kombination
-            }
-            
-            const data = await response.json();
-            console.log(`Received ${data.length} stocks from ${country} ${capSize}`);
-            
-            if (Array.isArray(data) && data.length > 0) {
-              // Validera att varje stock har alla nödvändiga fält
-              const validStocks = data.filter((stock: any) => 
-                stock && 
-                typeof stock === 'object' &&
-                stock.symbol &&
-                typeof stock.currentStreak === 'number' &&
-                typeof stock.totalDecline === 'number'
-              );
-              console.log(`Valid stocks: ${validStocks.length} out of ${data.length} for ${country} ${capSize}`);
-              console.log(`Sample symbols:`, validStocks.slice(0, 3).map((s: any) => s.symbol));
-              allStocks.push(...validStocks);
-            } else {
-              console.log(`No stocks returned for ${country} ${capSize}`);
-            }
-          } catch (error: any) {
-            console.error(`Error fetching ${country} ${capSize}:`, error);
-            // Fortsätt med nästa kombination även om denna misslyckades
-            continue;
+        try {
+          const url = `/api/stocks?country=${country}`;
+          console.log(`Fetching from: ${url}`);
+          
+          const response = await fetch(url);
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error(`API error for ${country}:`, response.status, errorData);
+            continue; // Fortsätt med nästa land
           }
+          
+          const data = await response.json();
+          console.log(`Received ${data.length} stocks from ${country}`);
+          
+          if (Array.isArray(data) && data.length > 0) {
+            // Validera att varje stock har alla nödvändiga fält
+            const validStocks = data.filter((stock: any) => 
+              stock && 
+              typeof stock === 'object' &&
+              stock.symbol &&
+              typeof stock.currentStreak === 'number' &&
+              typeof stock.totalDecline === 'number'
+            );
+            console.log(`Valid stocks: ${validStocks.length} out of ${data.length} for ${country}`);
+            console.log(`Sample symbols:`, validStocks.slice(0, 3).map((s: any) => s.symbol));
+            allStocks.push(...validStocks);
+          } else {
+            console.log(`No stocks returned for ${country}`);
+          }
+        } catch (error: any) {
+          console.error(`Error fetching ${country}:`, error);
+          // Fortsätt med nästa land även om denna misslyckades
+          continue;
         }
       }
 
@@ -93,22 +94,22 @@ export default function Home() {
   // Använd useCallback för att stabilisera funktionsreferensen och undvika oändlig loop
   const handleSelectionChange = useCallback((
     countries: ('sweden' | 'norway' | 'denmark' | 'finland' | 'canada' | 'usa')[],
-    capSizes: ('large' | 'mid' | 'small')[]
+    filters: FilterValues
   ) => {
     setCurrentCountries(countries);
-    setCurrentCapSizes(capSizes);
-    fetchStocks(countries, capSizes);
+    setCurrentFilters(filters);
+    fetchStocks(countries);
   }, [fetchStocks]); // fetchStocks är nu stabiliserad med useCallback
 
   // Använd useCallback för refresh-funktionen för att undvika oändlig loop
   const handleRefresh = useCallback(() => {
     // Trigger refresh by re-fetching with current selections
-    fetchStocks(currentCountries, currentCapSizes);
-  }, [fetchStocks, currentCountries, currentCapSizes]);
+    fetchStocks(currentCountries);
+  }, [fetchStocks, currentCountries]);
 
   useEffect(() => {
     // Initial load med default values
-    fetchStocks(['sweden'], ['large']);
+    fetchStocks(['sweden']);
   }, [fetchStocks]); // fetchStocks är nu stabiliserad med useCallback
 
   return (
@@ -120,6 +121,7 @@ export default function Home() {
           stocks={stocks} 
           isLoading={isLoading} 
           onRefresh={handleRefresh}
+          filters={currentFilters}
         />
       </div>
     </main>

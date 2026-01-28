@@ -4,11 +4,12 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { ArrowDown, TrendingUp, ChevronUp, ChevronDown, RefreshCw, Clock, BarChart3, AlertTriangle, HelpCircle, X } from 'lucide-react';
 import { StreakAnalysis } from '../types/stock';
 import { LogoutButton } from './LogoutButton';
+import { FilterValues } from './StockSelector';
 
-type SortColumn = 'streak' | 'hitRate' | 'decline' | 'zScore' | 'turnover';
+type SortColumn = 'streak' | 'hitRate' | 'decline' | 'zScore' | 'turnover' | 'marketCap';
 type SortDirection = 'asc' | 'desc';
 
-export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnalysis[]; isLoading?: boolean; onRefresh?: () => void }) => {
+export const Dashboard = ({ stocks, isLoading, onRefresh, filters }: { stocks: StreakAnalysis[]; isLoading?: boolean; onRefresh?: () => void; filters?: FilterValues }) => {
   const [sortColumn, setSortColumn] = useState<SortColumn>('streak');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
@@ -27,15 +28,34 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
     );
   }, [stocks]);
 
-  // Sortera aktier baserat på vald kolumn och riktning (måste vara innan conditional returns)
-  const sortedStocks = useMemo(() => {
+  // Apply filters and sort stocks (must be before conditional returns)
+  const filteredAndSortedStocks = useMemo(() => {
     if (!validStocks || validStocks.length === 0) {
       return [];
     }
     
-    const sorted = [...validStocks];
+    // Apply filters
+    let filtered = [...validStocks];
     
-    sorted.sort((a, b) => {
+    if (filters) {
+      filtered = filtered.filter(stock => {
+        // Market Cap filter (convert MSEK to SEK for comparison)
+        const marketCapMSEK = (stock.marketCapSEK ?? 0) / 1_000_000;
+        if (marketCapMSEK < filters.marketCapMin || marketCapMSEK > filters.marketCapMax) {
+          return false;
+        }
+        
+        // Turnover filter
+        if ((stock.turnoverSEK ?? 0) < filters.minTurnover) {
+          return false;
+        }
+        
+        return true;
+      });
+    }
+    
+    // Sort stocks
+    filtered.sort((a, b) => {
       let aValue: number;
       let bValue: number;
       
@@ -61,11 +81,16 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
           aValue = a.turnoverSEK ?? 0;
           bValue = b.turnoverSEK ?? 0;
           break;
+        case 'marketCap':
+          // Use normalized SEK values for sorting
+          aValue = a.marketCapSEK ?? 0;
+          bValue = b.marketCapSEK ?? 0;
+          break;
         default:
           return 0;
       }
       
-      // Hantera NaN eller undefined
+      // Handle NaN or undefined
       if (isNaN(aValue)) aValue = 0;
       if (isNaN(bValue)) bValue = 0;
       
@@ -76,27 +101,27 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
       }
     });
     
-    return sorted;
-  }, [validStocks, sortColumn, sortDirection]);
+    return filtered;
+  }, [validStocks, sortColumn, sortDirection, filters]);
 
-  // Beräkna statistik (måste vara innan conditional returns)
+  // Calculate statistics (must be before conditional returns)
   const longestStreak = useMemo(() => {
-    return validStocks.length > 0 && validStocks.every(s => typeof s?.currentStreak === 'number')
-      ? Math.max(...validStocks.map(s => s.currentStreak ?? 0))
+    return filteredAndSortedStocks.length > 0 && filteredAndSortedStocks.every(s => typeof s?.currentStreak === 'number')
+      ? Math.max(...filteredAndSortedStocks.map(s => s.currentStreak ?? 0))
       : 0;
-  }, [validStocks]);
+  }, [filteredAndSortedStocks]);
 
   const averageStreak = useMemo(() => {
-    return validStocks.length > 0 && validStocks.every(s => typeof s?.currentStreak === 'number')
-      ? (validStocks.reduce((sum, s) => sum + (s.currentStreak ?? 0), 0) / validStocks.length).toFixed(1)
+    return filteredAndSortedStocks.length > 0 && filteredAndSortedStocks.every(s => typeof s?.currentStreak === 'number')
+      ? (filteredAndSortedStocks.reduce((sum, s) => sum + (s.currentStreak ?? 0), 0) / filteredAndSortedStocks.length).toFixed(1)
       : '0.0';
-  }, [validStocks]);
+  }, [filteredAndSortedStocks]);
 
   const worstDecline = useMemo(() => {
-    return validStocks.length > 0 && validStocks.every(s => typeof s?.totalDecline === 'number')
-      ? Math.min(...validStocks.map(s => s.totalDecline ?? 0))
+    return filteredAndSortedStocks.length > 0 && filteredAndSortedStocks.every(s => typeof s?.totalDecline === 'number')
+      ? Math.min(...filteredAndSortedStocks.map(s => s.totalDecline ?? 0))
       : 0;
-  }, [validStocks]);
+  }, [filteredAndSortedStocks]);
 
   const severeDeclines = useMemo(() => {
     return validStocks.length > 0
@@ -324,11 +349,11 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
       <div className="mb-4">
         <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">Watchlist</h2>
         <p className="text-slate-400 text-sm hidden md:block">
-          {sortedStocks.length} stocks • Sorted by consecutive decline days
+          {filteredAndSortedStocks.length} stocks • Sorted by {sortColumn === 'streak' ? 'consecutive decline days' : sortColumn}
         </p>
         
-        {/* Mobile Sort Dropdown */}
-        <div className="md:hidden mt-3">
+        {/* Sort Dropdown (Mobile & Desktop) */}
+        <div className="mt-3">
           <label className="block text-sm font-medium text-slate-300 mb-2">
             Sortera efter
           </label>
@@ -339,10 +364,11 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
               setSortColumn(col as SortColumn);
               setSortDirection(dir as SortDirection);
             }}
-            className="w-full px-4 py-2 bg-[#1e293b] border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-slate-500"
+            className="w-full md:w-auto px-4 py-2 bg-[#1e293b] border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-slate-500"
           >
-            <option value="streak-desc">Högst Streak</option>
-            <option value="streak-asc">Lägst Streak</option>
+            <option value="streak-desc">Mest fall (Streak)</option>
+            <option value="marketCap-asc">Minst Börsvärde</option>
+            <option value="marketCap-desc">Störst Börsvärde</option>
             <option value="hitRate-desc">Högst Hit Rate</option>
             <option value="hitRate-asc">Lägst Hit Rate</option>
             <option value="zScore-asc">Lägst Z-Score (Mest extremt)</option>
@@ -422,7 +448,7 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
               </tr>
             </thead>
             <tbody>
-              {sortedStocks.map((stock, i) => {
+              {filteredAndSortedStocks.map((stock, i) => {
                 if (!stock || !stock.symbol) return null;
                 return (
                   <tr key={stock.symbol} className="border-t border-slate-700 hover:bg-slate-800 transition">
@@ -486,7 +512,7 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
 
         {/* Mobile Cards */}
         <div className="md:hidden divide-y divide-slate-700">
-          {sortedStocks.map((stock, i) => {
+          {filteredAndSortedStocks.map((stock, i) => {
             if (!stock || !stock.symbol) return null;
             return (
               <div key={stock.symbol} className="p-4 bg-[#1e293b]">

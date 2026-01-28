@@ -378,6 +378,7 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
                   </div>
                 </th>
                 <th className="p-4">SYMBOL</th>
+                <th className="p-4">PRICE / DAY</th>
                 <th className="p-4">CO</th>
                 <th 
                   className="p-4 cursor-pointer hover:text-white transition-colors select-none"
@@ -439,6 +440,19 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
                         <div className="text-slate-500 text-xs mt-1">{getExchange(stock.symbol)}</div>
                       )}
                     </td>
+                    <td className="p-4">
+                      <div className="font-semibold text-white">
+                        {(stock.lastPrice ?? 0).toFixed(2)}
+                      </div>
+                      <div className={`text-sm font-medium mt-1 ${
+                        (stock.dailyChange ?? 0) > 0 ? 'text-green-500' :
+                        (stock.dailyChange ?? 0) < 0 ? 'text-red-500' :
+                        'text-slate-400'
+                      }`}>
+                        {(stock.dailyChange ?? 0) > 0 ? '+' : ''}
+                        {((stock.dailyChange ?? 0)).toFixed(2)}%
+                      </div>
+                    </td>
                     <td className="p-4 text-slate-400 text-sm">
                       {getCompanyName(stock.name) ? getExchange(stock.symbol) : '-'}
                     </td>
@@ -483,6 +497,21 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
                     ) : (
                       <div className="text-slate-500 text-xs mt-1">{getExchange(stock.symbol)}</div>
                     )}
+                  </div>
+                  
+                  {/* Price / Day */}
+                  <div className="text-right">
+                    <div className="font-semibold text-white text-sm">
+                      {(stock.lastPrice ?? 0).toFixed(2)}
+                    </div>
+                    <div className={`text-xs font-medium mt-0.5 ${
+                      (stock.dailyChange ?? 0) > 0 ? 'text-green-500' :
+                      (stock.dailyChange ?? 0) < 0 ? 'text-red-500' :
+                      'text-slate-400'
+                    }`}>
+                      {(stock.dailyChange ?? 0) > 0 ? '+' : ''}
+                      {((stock.dailyChange ?? 0)).toFixed(2)}%
+                    </div>
                   </div>
                 </div>
                 

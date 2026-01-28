@@ -90,10 +90,10 @@ export const StockSelector: React.FC<StockSelectorProps> = ({ onFilterChange, is
   return (
     <>
       {/* Main Header Row */}
-      <div className="flex items-center gap-3 mb-4">
-        {/* Country Scroller */}
-        <div className="flex-1 overflow-x-auto scrollbar-hide">
-          <div className="flex items-center gap-2 pb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+        {/* Country Selector - Wrapping Layout */}
+        <div className="flex-1">
+          <div className="flex flex-wrap items-center gap-2">
             {ALL_COUNTRIES.map((country) => {
               const isActive = selectedCountries.includes(country.id);
               return (
@@ -101,7 +101,7 @@ export const StockSelector: React.FC<StockSelectorProps> = ({ onFilterChange, is
                   key={country.id}
                   onClick={() => toggleCountry(country.id)}
                   disabled={isLoading}
-                  className={`flex-shrink-0 flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-full transition-all min-w-[70px] ${
+                  className={`flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-full transition-all min-w-[70px] ${
                     isActive
                       ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
                       : 'bg-slate-800 text-slate-400 hover:bg-slate-700'

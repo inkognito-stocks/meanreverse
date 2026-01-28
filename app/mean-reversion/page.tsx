@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Dashboard } from '../../components/Dashboard';
 import { StockSelector, FilterValues } from '../../components/StockSelector';
 import { StreakAnalysis } from '../../types/stock';
+import { fetchStocks } from '../../lib/borsdata';
 
 export default function MeanReversionPage() {
   const [stocks, setStocks] = useState<StreakAnalysis[]>([]);
@@ -18,81 +19,48 @@ export default function MeanReversionPage() {
     minTurnover: 0,
   });
 
-  // Fetch data whenever countries change
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      setStocks([]); // Clear previous data
-      console.log(`Fetching stocks for: ${filters.selectedCountries.join(', ')}`);
+  // Fetch data function with caching support
+  const loadData = useCallback(async (forceRefresh: boolean = false) => {
+    setIsLoading(true);
+    if (forceRefresh) {
+      setStocks([]); // Clear previous data on force refresh
+    }
+    console.log(`Loading stocks for: ${filters.selectedCountries.join(', ')}${forceRefresh ? ' (force refresh)' : ''}`);
+    
+    try {
+      const promises = filters.selectedCountries.map(c => fetchStocks(c, forceRefresh));
+      const results = await Promise.all(promises);
+      const allStocks = results.flat();
+
+      // Remove duplicates based on symbol
+      const uniqueStocks = Array.from(
+        new Map(allStocks
+          .filter((stock: any) => stock && stock.symbol)
+          .map((stock: any) => [stock.symbol, stock]))
+          .values()
+      ) as StreakAnalysis[];
       
-      try {
-        const allStocks: StreakAnalysis[] = [];
+      // Sort by streak (default)
+      const sortedStocks = uniqueStocks.sort((a, b) => {
+        const aStreak = a?.currentStreak ?? 0;
+        const bStreak = b?.currentStreak ?? 0;
+        return bStreak - aStreak;
+      });
+      
+      console.log(`Total unique stocks: ${sortedStocks.length}`);
+      setStocks(sortedStocks);
+    } catch (error: any) {
+      console.error('Error fetching stocks:', error);
+      setStocks([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filters.selectedCountries]);
 
-        // Fetch stocks for each selected country
-        for (const country of filters.selectedCountries) {
-          try {
-            const url = `/api/stocks?country=${country}`;
-            console.log(`Fetching from: ${url}`);
-            
-            const response = await fetch(url);
-            
-            if (!response.ok) {
-              const errorData = await response.json().catch(() => ({}));
-              console.error(`API error for ${country}:`, response.status, errorData);
-              continue; // Continue with next country
-            }
-            
-            const data = await response.json();
-            console.log(`Received ${data.length} stocks from ${country}`);
-            
-            if (Array.isArray(data) && data.length > 0) {
-              // Validate that each stock has all required fields
-              const validStocks = data.filter((stock: any) => 
-                stock && 
-                typeof stock === 'object' &&
-                stock.symbol &&
-                typeof stock.currentStreak === 'number' &&
-                typeof stock.totalDecline === 'number'
-              );
-              console.log(`Valid stocks: ${validStocks.length} out of ${data.length} for ${country}`);
-              allStocks.push(...validStocks);
-            } else {
-              console.log(`No stocks returned for ${country}`);
-            }
-          } catch (error: any) {
-            console.error(`Error fetching ${country}:`, error);
-            // Continue with next country even if this one failed
-            continue;
-          }
-        }
-
-        // Remove duplicates based on symbol
-        const uniqueStocks = Array.from(
-          new Map(allStocks
-            .filter((stock: any) => stock && stock.symbol)
-            .map((stock: any) => [stock.symbol, stock]))
-            .values()
-        ) as StreakAnalysis[];
-        
-        // Sort by streak (default)
-        const sortedStocks = uniqueStocks.sort((a, b) => {
-          const aStreak = a?.currentStreak ?? 0;
-          const bStreak = b?.currentStreak ?? 0;
-          return bStreak - aStreak;
-        });
-        
-        console.log(`Total unique stocks: ${sortedStocks.length}`);
-        setStocks(sortedStocks);
-      } catch (error: any) {
-        console.error('Error fetching stocks:', error);
-        setStocks([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, [filters.selectedCountries]); // Re-fetch only when countries change
+  // Fetch data whenever countries change (use cached data)
+  useEffect(() => {
+    loadData(false);
+  }, [loadData]);
 
   // Handle filter changes from StockSelector
   const handleFilterChange = useCallback((newFilters: FilterValues) => {
@@ -100,46 +68,10 @@ export default function MeanReversionPage() {
     // The useEffect above will trigger when selectedCountries changes
   }, []);
 
-  // Refresh handler
+  // Refresh handler (force refresh, bypass cache)
   const handleRefresh = useCallback(() => {
-    // Re-trigger fetch with current filters
-    const loadData = async () => {
-      setIsLoading(true);
-      setStocks([]);
-      
-      try {
-        const allStocks: StreakAnalysis[] = [];
-        for (const country of filters.selectedCountries) {
-          try {
-            const response = await fetch(`/api/stocks?country=${country}`);
-            if (!response.ok) continue;
-            const data = await response.json();
-            if (Array.isArray(data) && data.length > 0) {
-              const validStocks = data.filter((stock: any) => 
-                stock && stock.symbol && typeof stock.currentStreak === 'number'
-              );
-              allStocks.push(...validStocks);
-            }
-          } catch (error) {
-            console.error(`Error fetching ${country}:`, error);
-          }
-        }
-        
-        const uniqueStocks = Array.from(
-          new Map(allStocks.map((stock: any) => [stock.symbol, stock])).values()
-        ) as StreakAnalysis[];
-        
-        setStocks(uniqueStocks.sort((a, b) => (b.currentStreak ?? 0) - (a.currentStreak ?? 0)));
-      } catch (error) {
-        console.error('Error refreshing stocks:', error);
-        setStocks([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadData();
-  }, [filters.selectedCountries]);
+    loadData(true);
+  }, [loadData]);
 
   return (
     <main>

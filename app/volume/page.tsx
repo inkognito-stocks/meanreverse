@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { StockSelector, FilterValues } from '../../components/StockSelector';
 import { StreakAnalysis } from '../../types/stock';
+import { fetchStocks } from '../../lib/borsdata';
 import { Flame, TrendingUp, TrendingDown, Activity, Zap, BarChart3, Loader2 } from 'lucide-react';
 
 export default function VolumePage() {
@@ -16,41 +17,36 @@ export default function VolumePage() {
     minTurnover: 0
   });
 
-  // Fetch data based on selected countries
-  useEffect(() => {
-    async function load() {
-      setIsLoading(true);
-      try {
-        const promises = filters.selectedCountries.map(async (country) => {
-          try {
-            const response = await fetch(`/api/stocks?country=${country}`);
-            if (!response.ok) return [];
-            const data = await response.json();
-            return Array.isArray(data) ? data : [];
-          } catch (error) {
-            console.error(`Error fetching ${country}:`, error);
-            return [];
-          }
-        });
-        
-        const results = await Promise.all(promises);
-        const allStocks = results.flat();
-        
-        // Remove duplicates based on symbol
-        const uniqueStocks = Array.from(
-          new Map(allStocks.map((stock: any) => [stock.symbol, stock])).values()
-        ) as StreakAnalysis[];
-        
-        setStocks(uniqueStocks);
-      } catch (e) {
-        console.error('Error loading stocks:', e);
-        setStocks([]);
-      } finally {
-        setIsLoading(false);
-      }
+  // Fetch data function with caching support
+  const load = useCallback(async (forceRefresh: boolean = false) => {
+    setIsLoading(true);
+    if (forceRefresh) {
+      setStocks([]); // Clear previous data on force refresh
     }
-    load();
+    
+    try {
+      const promises = filters.selectedCountries.map((c: string) => fetchStocks(c, forceRefresh));
+      const results = await Promise.all(promises);
+      const allStocks = results.flat();
+      
+      // Remove duplicates based on symbol
+      const uniqueStocks = Array.from(
+        new Map(allStocks.map((stock: any) => [stock.symbol, stock])).values()
+      ) as StreakAnalysis[];
+      
+      setStocks(uniqueStocks);
+    } catch (e) {
+      console.error('Error loading stocks:', e);
+      setStocks([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [filters.selectedCountries]);
+
+  // Initial load (use cached data)
+  useEffect(() => {
+    load(false);
+  }, [load]);
 
   // --- ANALYSIS LOGIC --- //
   
@@ -73,27 +69,27 @@ export default function VolumePage() {
     return Math.min(Math.max(activityRatio, 0.5), 8.5); 
   };
 
-  const processedStocks = stocks.map(s => ({
+  const processedStocks = stocks.map((s: StreakAnalysis) => ({
     ...s,
     rvol: getRVOL(s)
   }));
 
   // 1. THE HOTLIST: High Activity (>2x RVOL)
   const hotList = processedStocks
-    .filter(s => s.rvol > 2.0)
-    .sort((a, b) => b.rvol - a.rvol)
+    .filter((s: StreakAnalysis & { rvol: number }) => s.rvol > 2.0)
+    .sort((a: StreakAnalysis & { rvol: number }, b: StreakAnalysis & { rvol: number }) => b.rvol - a.rvol)
     .slice(0, 15);
 
   // 2. BREAKOUTS: Price Up + Volume Up
   const breakouts = processedStocks
-    .filter(s => s.dailyChange > 2.5 && s.rvol > 1.5)
-    .sort((a, b) => b.dailyChange - a.dailyChange)
+    .filter((s: StreakAnalysis & { rvol: number }) => (s.dailyChange ?? 0) > 2.5 && s.rvol > 1.5)
+    .sort((a: StreakAnalysis, b: StreakAnalysis) => (b.dailyChange ?? 0) - (a.dailyChange ?? 0))
     .slice(0, 5);
 
   // 3. CAPITULATION: Price Down + Volume Up (Panic)
   const panicList = processedStocks
-    .filter(s => s.dailyChange < -4.0 && s.rvol > 1.5)
-    .sort((a, b) => a.dailyChange - b.dailyChange)
+    .filter((s: StreakAnalysis & { rvol: number }) => (s.dailyChange ?? 0) < -4.0 && s.rvol > 1.5)
+    .sort((a: StreakAnalysis, b: StreakAnalysis) => (a.dailyChange ?? 0) - (b.dailyChange ?? 0))
     .slice(0, 5);
 
   return (
@@ -133,7 +129,7 @@ export default function VolumePage() {
                 <StatBox label="Active Stocks" value={hotList.length} icon={<Zap className="text-yellow-500" />} />
                 <StatBox label="Breakouts" value={breakouts.length} icon={<TrendingUp className="text-green-500" />} />
                 <StatBox label="Panic Sells" value={panicList.length} icon={<TrendingDown className="text-red-500" />} />
-                <StatBox label="Avg RVOL" value={hotList.length > 0 ? `${(hotList.reduce((sum, s) => sum + s.rvol, 0) / hotList.length).toFixed(1)}x` : '0.0x'} icon={<BarChart3 className="text-blue-500" />} />
+                <StatBox label="Avg RVOL" value={hotList.length > 0 ? `${(hotList.reduce((sum: number, s: StreakAnalysis & { rvol: number }) => sum + s.rvol, 0) / hotList.length).toFixed(1)}x` : '0.0x'} icon={<BarChart3 className="text-blue-500" />} />
               </div>
 
               {/* The Visual Table */}
@@ -158,7 +154,7 @@ export default function VolumePage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-700/50">
-                      {hotList.map((stock) => (
+                      {hotList.map((stock: StreakAnalysis & { rvol: number }) => (
                         <tr key={stock.symbol} className="hover:bg-slate-700/30 transition group">
                           <td className="p-4">
                             <div className="font-bold font-mono text-white text-base">{stock.symbol}</div>
@@ -212,7 +208,7 @@ export default function VolumePage() {
                   <p className="text-xs text-slate-500 mt-1">Crashing on high volume (Potential Reversal)</p>
                 </div>
                 <div className="divide-y divide-slate-700">
-                  {panicList.map(s => <SignalRow key={s.symbol} stock={s} type="bear" />)}
+                  {panicList.map((s: StreakAnalysis & { rvol: number }) => <SignalRow key={s.symbol} stock={s} type="bear" />)}
                   {panicList.length === 0 && <EmptyState />}
                 </div>
               </div>
@@ -226,7 +222,7 @@ export default function VolumePage() {
                    <p className="text-xs text-slate-500 mt-1">Surging on high volume (Momentum)</p>
                 </div>
                 <div className="divide-y divide-slate-700">
-                  {breakouts.map(s => <SignalRow key={s.symbol} stock={s} type="bull" />)}
+                  {breakouts.map((s: StreakAnalysis & { rvol: number }) => <SignalRow key={s.symbol} stock={s} type="bull" />)}
                   {breakouts.length === 0 && <EmptyState />}
                 </div>
               </div>
@@ -262,7 +258,7 @@ const SignalRow = ({ stock, type }: { stock: StreakAnalysis, type: 'bull'|'bear'
         {(stock.dailyChange ?? 0) > 0 ? '+' : ''}{(stock.dailyChange ?? 0).toFixed(2)}%
       </div>
       <div className="text-[10px] text-slate-400">
-        Vol: <span className="text-white">{stock.rvol.toFixed(1)}x</span>
+        Vol: <span className="text-white">{(stock.rvol ?? 0).toFixed(1)}x</span>
       </div>
     </div>
   </div>

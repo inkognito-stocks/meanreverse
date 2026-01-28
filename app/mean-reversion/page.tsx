@@ -70,6 +70,8 @@ export default function MeanReversionPage() {
 
   // Refresh handler (force refresh, bypass cache)
   const handleRefresh = useCallback(() => {
+    // Force refresh by calling loadData with forceRefresh = true
+    // This will call fetchStocks(country, true) for each country to bypass cache
     loadData(true);
   }, [loadData]);
 

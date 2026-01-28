@@ -48,6 +48,13 @@ export default function VolumePage() {
     load(false);
   }, [load]);
 
+  // Refresh handler (force refresh, bypass cache)
+  const handleRefresh = useCallback(() => {
+    // Force refresh by calling load with forceRefresh = true
+    // This will call fetchStocks(country, true) for each country to bypass cache
+    load(true);
+  }, [load]);
+
   // --- ANALYSIS LOGIC --- //
   
   // Calculate a mock "RVOL" (Relative Volume) score since we lack historical volume arrays in this demo.

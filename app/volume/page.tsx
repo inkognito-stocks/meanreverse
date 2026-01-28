@@ -130,6 +130,7 @@ export default function VolumePage() {
     .slice(0, 20);
 
   return (
+    <>
     <main>
       <div className="min-h-screen bg-[#0f172a] text-white p-3 sm:p-6 font-sans pt-20">
         <div className="max-w-7xl mx-auto">
@@ -337,5 +338,6 @@ export default function VolumePage() {
         </div>
       </div>
     </main>
+    </>
   );
 }

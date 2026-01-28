@@ -27,4 +27,5 @@ export interface StreakAnalysis {
   bollingerLower?: number;
   bollingerMiddle?: number;
   avgVolume?: number;
+  rvol?: number; // Relative Volume (current volume / average volume)
 }

@@ -109,6 +109,19 @@ export function calculateAverageVolume(volumes: number[], period: number): numbe
 }
 
 /**
+ * Calculate RVOL (Relative Volume) - Current volume vs average volume
+ * @param currentVolume Current day's volume
+ * @param avgVolume Average volume over period (typically 20 days)
+ * @returns RVOL ratio (e.g., 2.5 means 2.5x average volume)
+ */
+export function calculateRVOL(currentVolume: number, avgVolume: number): number {
+  if (!avgVolume || avgVolume === 0) {
+    return 0;
+  }
+  return currentVolume / avgVolume;
+}
+
+/**
  * Calculate all technical indicators from DailyData history
  * @param history Array of DailyData
  * @returns Object with all calculated indicators
@@ -139,6 +152,10 @@ export function calculateAllIndicators(history: DailyData[]) {
   const bollinger = calculateBollinger(prices, 20, 2);
   const avgVolume = calculateAverageVolume(volumes, 20);
 
+  // Calculate RVOL if we have recent volume data
+  const currentVolume = volumes.length > 0 ? volumes[volumes.length - 1] : 0;
+  const rvol = calculateRVOL(currentVolume, avgVolume);
+
   return {
     rsi2,
     rsi14,
@@ -149,5 +166,6 @@ export function calculateAllIndicators(history: DailyData[]) {
     bollingerLower: bollinger.lower,
     bollingerMiddle: bollinger.middle,
     avgVolume,
+    rvol,
   };
 }

@@ -194,7 +194,7 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
             aria-label="Visa förklaring"
           >
             {children}
-            <HelpCircle className="w-3 h-3 ml-1 text-slate-400" />
+            <HelpCircle className={`w-3 h-3 ${children ? 'ml-1' : ''} text-slate-400 hover:text-white transition-colors`} />
           </button>
           {isOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setMobileTooltip(null)}>
@@ -214,10 +214,11 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
       );
     }
 
+    // Desktop: Always show icon, tooltip on hover
     return (
-      <div className="relative group inline-flex items-center">
+      <div className="relative group inline-flex items-center gap-1">
         {children}
-        <HelpCircle className="w-3 h-3 ml-1 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <HelpCircle className="w-3 h-3 text-slate-400 group-hover:text-white transition-colors cursor-help" />
         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-[#1e293b] border border-slate-600 rounded-lg text-xs text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 max-w-xs">
           {text}
           <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-600"></div>
@@ -364,12 +365,11 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
                   onClick={() => handleSort('streak')}
                 >
                   <div className="flex items-center gap-2">
+                    <span>DOWN STREAK</span>
                     <Tooltip 
-                      text="Antal handelsdagar i rad som aktien har stängt på minus." 
+                      text="Antal dagar i rad som aktien stängt på minus." 
                       id="streak"
-                    >
-                      <span>DOWN STREAK</span>
-                    </Tooltip>
+                    />
                     {sortColumn === 'streak' && (
                       <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded">SORTED</span>
                     )}
@@ -383,12 +383,11 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
                   onClick={() => handleSort('hitRate')}
                 >
                   <div className="flex items-center gap-2">
+                    <span>HIT RATE</span>
                     <Tooltip 
-                      text="Sannolikheten att aktien stänger grönt nästa dag, baserat på historiska data vid liknande streaks." 
+                      text="Sannolikheten att aktien stänger grönt nästa dag, baserat på historik." 
                       id="hitRate"
-                    >
-                      <span>HIT RATE</span>
-                    </Tooltip>
+                    />
                     <SortIcon column="hitRate" />
                   </div>
                 </th>
@@ -397,12 +396,11 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
                   onClick={() => handleSort('decline')}
                 >
                   <div className="flex items-center gap-2">
+                    <span>DECLINE</span>
                     <Tooltip 
                       text="Total nedgång från början av nuvarande streak." 
                       id="decline"
-                    >
-                      <span>DECLINE</span>
-                    </Tooltip>
+                    />
                     <SortIcon column="decline" />
                   </div>
                 </th>
@@ -411,12 +409,11 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
                   onClick={() => handleSort('zScore')}
                 >
                   <div className="flex items-center gap-2">
+                    <span>EXTREMITY (Z)</span>
                     <Tooltip 
-                      text="Mäter hur extremt priset avviker från sitt snitt. Värden under -2.0 indikerar att aktien är kraftigt översåld." 
+                      text="Hur extremt priset avviker från sitt snitt. Under -2.0 = översåld." 
                       id="zScore"
-                    >
-                      <span>EXTREMITY (Z)</span>
-                    </Tooltip>
+                    />
                     <SortIcon column="zScore" />
                   </div>
                 </th>
@@ -494,7 +491,7 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
                     <div className="flex items-center gap-1 mb-1">
                       <p className="text-slate-400">Hit Rate</p>
                       <Tooltip 
-                        text="Sannolikheten att aktien stänger grönt nästa dag, baserat på historiska data vid liknande streaks." 
+                        text="Sannolikheten att aktien stänger grönt nästa dag, baserat på historik." 
                         id="mobile-hitRate"
                         mobileOnly={true}
                       />
@@ -516,7 +513,7 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
                     <div className="flex items-center gap-1 mb-1">
                       <p className="text-slate-400">Z-Score</p>
                       <Tooltip 
-                        text="Mäter hur extremt priset avviker från sitt snitt. Värden under -2.0 indikerar att aktien är kraftigt översåld." 
+                        text="Hur extremt priset avviker från sitt snitt. Under -2.0 = översåld." 
                         id="mobile-zScore"
                         mobileOnly={true}
                       />

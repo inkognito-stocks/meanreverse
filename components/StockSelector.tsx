@@ -3,155 +3,183 @@
 import { useState, useEffect } from 'react';
 import { RefreshCw } from 'lucide-react';
 
+// Data structure: Country arrays
+const NORDIC_COUNTRIES = ['Sweden', 'Norway', 'Denmark', 'Finland'] as const;
+const NA_COUNTRIES = ['USA', 'Canada'] as const;
+
+type Region = 'nordic' | 'na';
+type CapSize = 'large' | 'mid' | 'small';
+
+// Country info with flags and API codes
+const COUNTRY_INFO: Record<string, { emoji: string; available: boolean; code: 'sweden' | 'canada' | 'usa' | null }> = {
+  'Sweden': { emoji: '🇸🇪', available: true, code: 'sweden' },
+  'Norway': { emoji: '🇳🇴', available: false, code: null },
+  'Denmark': { emoji: '🇩🇰', available: false, code: null },
+  'Finland': { emoji: '🇫🇮', available: false, code: null },
+  'USA': { emoji: '🇺🇸', available: true, code: 'usa' },
+  'Canada': { emoji: '🇨🇦', available: true, code: 'canada' },
+};
+
 interface StockSelectorProps {
   onSelect: (countries: ('sweden' | 'canada' | 'usa')[], capSizes: ('large' | 'mid' | 'small')[]) => void;
   isLoading?: boolean;
 }
 
 export function StockSelector({ onSelect, isLoading = false }: StockSelectorProps) {
-  const [selectedCountries, setSelectedCountries] = useState<('sweden' | 'canada' | 'usa')[]>(['sweden']);
-  const [selectedCapSizes, setSelectedCapSizes] = useState<('large' | 'mid' | 'small')[]>(['large']);
+  const [activeRegion, setActiveRegion] = useState<Region>('nordic');
+  const [selectedCountries, setSelectedCountries] = useState<string[]>(['Sweden']);
+  const [selectedCapSizes, setSelectedCapSizes] = useState<CapSize[]>(['large']);
 
-  // Uppdatera när val ändras
-  // OBS: onSelect är INTE i dependency-arrayen för att undvika oändlig loop
-  // onSelect skapas på nytt varje render i parent-komponenten
+  // When region changes, reset selected countries to first available in that region
   useEffect(() => {
-    if (selectedCountries.length > 0 && selectedCapSizes.length > 0) {
-      onSelect(selectedCountries, selectedCapSizes);
+    const availableCountries = activeRegion === 'nordic'
+      ? NORDIC_COUNTRIES.filter(c => COUNTRY_INFO[c].available)
+      : NA_COUNTRIES.filter(c => COUNTRY_INFO[c].available);
+    
+    if (availableCountries.length > 0) {
+      // Reset to first available country when region changes
+      setSelectedCountries([availableCountries[0]]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCountries, selectedCapSizes]);
+  }, [activeRegion]);
 
-  const handleCountryToggle = (country: 'sweden' | 'canada' | 'usa') => {
+  // Convert display country names to API codes and trigger onSelect
+  useEffect(() => {
+    const availableCountryCodes = selectedCountries
+      .filter(c => COUNTRY_INFO[c]?.available && COUNTRY_INFO[c]?.code)
+      .map(c => COUNTRY_INFO[c].code) as ('sweden' | 'canada' | 'usa')[];
+    
+    if (availableCountryCodes.length > 0 && selectedCapSizes.length > 0) {
+      onSelect(availableCountryCodes, selectedCapSizes);
+    }
+  }, [selectedCountries, selectedCapSizes, onSelect]);
+
+  const handleRegionChange = (region: Region) => {
+    setActiveRegion(region);
+  };
+
+  const handleCountryToggle = (country: string) => {
+    if (!COUNTRY_INFO[country]?.available) return;
+    
     setSelectedCountries(prev => {
       if (prev.includes(country)) {
-        // Ta bort om redan vald, men se till att minst ett land är valt
+        // Remove if already selected, but ensure at least one is selected
         const newSelection = prev.filter(c => c !== country);
         return newSelection.length > 0 ? newSelection : prev;
       } else {
-        // Lägg till om inte vald
+        // Add if not selected
         return [...prev, country];
       }
     });
   };
 
-  const handleCapSizeToggle = (capSize: 'large' | 'mid' | 'small') => {
+  const handleCapSizeToggle = (capSize: CapSize) => {
     setSelectedCapSizes(prev => {
       if (prev.includes(capSize)) {
-        // Ta bort om redan vald, men se till att minst en kapitalstorlek är vald
+        // Remove if already selected, but ensure at least one is selected
         const newSelection = prev.filter(c => c !== capSize);
         return newSelection.length > 0 ? newSelection : prev;
       } else {
-        // Lägg till om inte vald
+        // Add if not selected
         return [...prev, capSize];
       }
     });
   };
 
+  const getCountriesForRegion = () => {
+    return activeRegion === 'nordic' ? NORDIC_COUNTRIES : NA_COUNTRIES;
+  };
+
   return (
     <div className="bg-[#1e293b] rounded-xl border border-slate-700 p-4 mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Land/Börs Checkboxes */}
-        <div>
-          <label className="block text-sm font-medium text-slate-300 mb-3">
-            Land / Börs
-          </label>
-          <div className="space-y-2">
-            <label className="flex items-center cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={selectedCountries.includes('sweden')}
-                onChange={() => handleCountryToggle('sweden')}
-                disabled={isLoading || (selectedCountries.length === 1 && selectedCountries.includes('sweden'))}
-                className="w-4 h-4 rounded border-slate-600 bg-[#0f172a] text-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-0 focus:ring-offset-[#1e293b] disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-              <span className="ml-3 text-white group-hover:text-green-400 transition-colors">
-                🇸🇪 Sverige (Nasdaq Stockholm)
-              </span>
-            </label>
-            <label className="flex items-center cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={selectedCountries.includes('canada')}
-                onChange={() => handleCountryToggle('canada')}
-                disabled={isLoading || (selectedCountries.length === 1 && selectedCountries.includes('canada'))}
-                className="w-4 h-4 rounded border-slate-600 bg-[#0f172a] text-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-0 focus:ring-offset-[#1e293b] disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-              <span className="ml-3 text-white group-hover:text-green-400 transition-colors">
-                🇨🇦 Kanada (TSX)
-              </span>
-            </label>
-            <label className="flex items-center cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={selectedCountries.includes('usa')}
-                onChange={() => handleCountryToggle('usa')}
-                disabled={isLoading || (selectedCountries.length === 1 && selectedCountries.includes('usa'))}
-                className="w-4 h-4 rounded border-slate-600 bg-[#0f172a] text-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-0 focus:ring-offset-[#1e293b] disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-              <span className="ml-3 text-white group-hover:text-green-400 transition-colors">
-                🇺🇸 USA (NYSE & NASDAQ)
-              </span>
-            </label>
-          </div>
-          <p className="mt-2 text-xs text-slate-400">
-            {selectedCountries.length} {selectedCountries.length === 1 ? 'land valt' : 'länder valda'}
-          </p>
-        </div>
-
-        {/* Lista Checkboxes */}
-        <div>
-          <label className="block text-sm font-medium text-slate-300 mb-3">
-            Lista
-          </label>
-          <div className="space-y-2">
-            <label className="flex items-center cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={selectedCapSizes.includes('large')}
-                onChange={() => handleCapSizeToggle('large')}
-                disabled={isLoading || (selectedCapSizes.length === 1 && selectedCapSizes.includes('large'))}
-                className="w-4 h-4 rounded border-slate-600 bg-[#0f172a] text-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-0 focus:ring-offset-[#1e293b] disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-              <span className="ml-3 text-white group-hover:text-green-400 transition-colors">
-                Large Cap
-              </span>
-            </label>
-            <label className="flex items-center cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={selectedCapSizes.includes('mid')}
-                onChange={() => handleCapSizeToggle('mid')}
-                disabled={isLoading || (selectedCapSizes.length === 1 && selectedCapSizes.includes('mid'))}
-                className="w-4 h-4 rounded border-slate-600 bg-[#0f172a] text-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-0 focus:ring-offset-[#1e293b] disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-              <span className="ml-3 text-white group-hover:text-green-400 transition-colors">
-                Mid Cap
-              </span>
-            </label>
-            <label className="flex items-center cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={selectedCapSizes.includes('small')}
-                onChange={() => handleCapSizeToggle('small')}
-                disabled={isLoading || (selectedCapSizes.length === 1 && selectedCapSizes.includes('small'))}
-                className="w-4 h-4 rounded border-slate-600 bg-[#0f172a] text-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-0 focus:ring-offset-[#1e293b] disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-              <span className="ml-3 text-white group-hover:text-green-400 transition-colors">
-                Small Cap
-              </span>
-            </label>
-          </div>
-          <p className="mt-2 text-xs text-slate-400">
-            {selectedCapSizes.length} {selectedCapSizes.length === 1 ? 'lista vald' : 'listor valda'}
-          </p>
-        </div>
+      {/* SECTION 1: Region Selector (Top) */}
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        <button
+          onClick={() => handleRegionChange('nordic')}
+          disabled={isLoading}
+          className={`px-6 py-3 rounded-lg font-medium text-sm transition-all ${
+            activeRegion === 'nordic'
+              ? 'bg-blue-600 text-white shadow-lg'
+              : 'bg-slate-800 text-slate-400 hover:bg-slate-750'
+          } disabled:opacity-50 disabled:cursor-not-allowed`}
+        >
+          Nordic Markets
+        </button>
+        <button
+          onClick={() => handleRegionChange('na')}
+          disabled={isLoading}
+          className={`px-6 py-3 rounded-lg font-medium text-sm transition-all ${
+            activeRegion === 'na'
+              ? 'bg-blue-600 text-white shadow-lg'
+              : 'bg-slate-800 text-slate-400 hover:bg-slate-750'
+          } disabled:opacity-50 disabled:cursor-not-allowed`}
+        >
+          North America
+        </button>
       </div>
 
+      {/* SECTION 2: Country Filter (Middle) */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {getCountriesForRegion().map(country => {
+          const isSelected = selectedCountries.includes(country);
+          const isAvailable = COUNTRY_INFO[country]?.available ?? false;
+          
+          return (
+            <button
+              key={country}
+              onClick={() => handleCountryToggle(country)}
+              disabled={isLoading || !isAvailable}
+              className={`px-4 py-2 rounded-full text-sm font-medium border transition-all flex items-center gap-2 ${
+                isSelected && isAvailable
+                  ? 'bg-slate-800 border-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.2)]'
+                  : isAvailable
+                  ? 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500'
+                  : 'bg-slate-900 border-slate-700 text-slate-500 cursor-not-allowed opacity-50'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {isSelected && isAvailable && (
+                <span className="w-2 h-2 rounded-full bg-green-500"></span>
+              )}
+              <span>{COUNTRY_INFO[country]?.emoji}</span>
+              <span>{country}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* SECTION 3: Cap Size Filter (Bottom) */}
+      <div className="flex flex-wrap gap-2">
+        {(['large', 'mid', 'small'] as CapSize[]).map(capSize => {
+          const isSelected = selectedCapSizes.includes(capSize);
+          const label = capSize === 'large' ? 'Large Cap' : capSize === 'mid' ? 'Mid Cap' : 'Small Cap';
+          
+          return (
+            <button
+              key={capSize}
+              onClick={() => handleCapSizeToggle(capSize)}
+              disabled={isLoading || (selectedCapSizes.length === 1 && isSelected)}
+              className={`px-4 py-2 rounded-full text-sm font-medium border transition-all flex items-center gap-2 ${
+                isSelected
+                  ? 'bg-slate-800 border-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.2)]'
+                  : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {isSelected && (
+                <span className="w-2 h-2 rounded-full bg-green-500"></span>
+              )}
+              <span>{label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Loading Indicator */}
       {isLoading && (
         <div className="mt-4 flex items-center justify-center text-slate-400">
           <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-          <span className="text-sm">Hämtar data för {selectedCountries.length} {selectedCountries.length === 1 ? 'land' : 'länder'}...</span>
+          <span className="text-sm">
+            Hämtar data för {selectedCountries.filter(c => COUNTRY_INFO[c]?.available).length}{' '}
+            {selectedCountries.filter(c => COUNTRY_INFO[c]?.available).length === 1 ? 'land' : 'länder'}...
+          </span>
         </div>
       )}
     </div>

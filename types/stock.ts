@@ -12,8 +12,8 @@ export interface StreakAnalysis {
   totalDecline: number;
   avgTurnover20d: number;
   historicalHitRate: number; // Sannolikhet för grön dag efter n dagar
-  lastPrice: number;
-  dailyChange: number;
+  lastPrice?: number; // Optional for build safety
+  dailyChange?: number; // Optional for build safety
   zScore: number; // Z-score för att mäta extremitet (hur långt från medelvärdet)
   marketCap: number; // Market cap in original currency
   currency: 'SEK' | 'USD' | 'CAD' | 'EUR' | 'DKK' | 'NOK'; // Original currency

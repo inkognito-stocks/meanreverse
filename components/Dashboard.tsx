@@ -441,17 +441,27 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
                       )}
                     </td>
                     <td className="p-4">
-                      <div className="font-semibold text-white">
-                        {(stock.lastPrice ?? 0).toFixed(2)}
-                      </div>
-                      <div className={`text-sm font-medium mt-1 ${
-                        (stock.dailyChange ?? 0) > 0 ? 'text-green-500' :
-                        (stock.dailyChange ?? 0) < 0 ? 'text-red-500' :
-                        'text-slate-400'
-                      }`}>
-                        {(stock.dailyChange ?? 0) > 0 ? '+' : ''}
-                        {((stock.dailyChange ?? 0)).toFixed(2)}%
-                      </div>
+                      {stock.lastPrice != null && typeof stock.lastPrice === 'number' && !isNaN(stock.lastPrice) ? (
+                        <>
+                          <div className="font-semibold text-white">
+                            {stock.lastPrice.toFixed(2)}
+                          </div>
+                          {stock.dailyChange != null && typeof stock.dailyChange === 'number' && !isNaN(stock.dailyChange) ? (
+                            <div className={`text-sm font-medium mt-1 ${
+                              stock.dailyChange > 0 ? 'text-green-500' :
+                              stock.dailyChange < 0 ? 'text-red-500' :
+                              'text-slate-400'
+                            }`}>
+                              {stock.dailyChange > 0 ? '+' : ''}
+                              {stock.dailyChange.toFixed(2)}%
+                            </div>
+                          ) : (
+                            <div className="text-slate-400 text-sm mt-1">-</div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-slate-400 text-sm">N/A</div>
+                      )}
                     </td>
                     <td className="p-4 text-slate-400 text-sm">
                       {getCompanyName(stock.name) ? getExchange(stock.symbol) : '-'}
@@ -501,17 +511,27 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
                   
                   {/* Price / Day */}
                   <div className="text-right">
-                    <div className="font-semibold text-white text-sm">
-                      {(stock.lastPrice ?? 0).toFixed(2)}
-                    </div>
-                    <div className={`text-xs font-medium mt-0.5 ${
-                      (stock.dailyChange ?? 0) > 0 ? 'text-green-500' :
-                      (stock.dailyChange ?? 0) < 0 ? 'text-red-500' :
-                      'text-slate-400'
-                    }`}>
-                      {(stock.dailyChange ?? 0) > 0 ? '+' : ''}
-                      {((stock.dailyChange ?? 0)).toFixed(2)}%
-                    </div>
+                    {stock.lastPrice != null && typeof stock.lastPrice === 'number' && !isNaN(stock.lastPrice) ? (
+                      <>
+                        <div className="font-semibold text-white text-sm">
+                          {stock.lastPrice.toFixed(2)}
+                        </div>
+                        {stock.dailyChange != null && typeof stock.dailyChange === 'number' && !isNaN(stock.dailyChange) ? (
+                          <div className={`text-xs font-medium mt-0.5 ${
+                            stock.dailyChange > 0 ? 'text-green-500' :
+                            stock.dailyChange < 0 ? 'text-red-500' :
+                            'text-slate-400'
+                          }`}>
+                            {stock.dailyChange > 0 ? '+' : ''}
+                            {stock.dailyChange.toFixed(2)}%
+                          </div>
+                        ) : (
+                          <div className="text-slate-400 text-xs mt-0.5">-</div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-slate-400 text-xs">N/A</div>
+                    )}
                   </div>
                 </div>
                 

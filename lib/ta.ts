@@ -138,6 +138,7 @@ export function calculateAllIndicators(history: DailyData[]) {
       bollingerLower: 0,
       bollingerMiddle: 0,
       avgVolume: 0,
+      rvol: 0,
     };
   }
 

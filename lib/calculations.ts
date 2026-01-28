@@ -1,17 +1,24 @@
 import { DailyData, StreakAnalysis } from '../types/stock';
+import { normalizeToSEK, Currency } from './currency';
 
 export function analyzeStock(
   symbol: string, 
   name: string, 
   history: DailyData[], 
-  minTurnover: number = 1000000
+  minTurnover: number = 1000000,
+  marketCap: number = 0,
+  currency: Currency = 'SEK'
 ): StreakAnalysis | null {
   
   // 1. Volymfilter: Beräkna genomsnittlig omsättning senaste 20 dagarna
   const recent20 = history.slice(-20);
   const avgTurnover = recent20.reduce((acc, d) => acc + d.turnover, 0) / 20;
   
-  if (avgTurnover < minTurnover) return null; // Filtrera bort illikvida aktier
+  // Normalize turnover to SEK for filtering
+  const avgTurnoverSEK = normalizeToSEK(avgTurnover, currency);
+  const minTurnoverSEK = normalizeToSEK(minTurnover, currency);
+  
+  if (avgTurnoverSEK < minTurnoverSEK) return null; // Filtrera bort illikvida aktier
 
   // 2. Beräkna nuvarande Down Streak
   let currentStreak = 0;
@@ -76,15 +83,22 @@ export function analyzeStock(
   const dailyChange = prevPrice > 0 ? ((lastPrice - prevPrice) / prevPrice) * 100 : 0;
   const totalDecline = firstPriceInStreak > 0 ? ((lastPrice - firstPriceInStreak) / firstPriceInStreak) * 100 : 0;
 
+  // Normalize market cap to SEK
+  const marketCapSEK = normalizeToSEK(marketCap, currency);
+
   return {
     symbol,
     name,
     currentStreak,
-    avgTurnover20d: avgTurnover,
+    avgTurnover20d: avgTurnover, // Keep original turnover in original currency
     historicalHitRate: Math.round(hitRate),
     lastPrice,
     dailyChange,
     totalDecline,
-    zScore: Math.round(zScore * 10) / 10 // Avrunda till en decimal
+    zScore: Math.round(zScore * 10) / 10, // Avrunda till en decimal
+    marketCap: marketCap || 0, // Original market cap in original currency
+    currency: currency,
+    marketCapSEK: marketCapSEK, // Normalized to SEK for filtering/sorting
+    turnoverSEK: avgTurnoverSEK, // Normalized to SEK for filtering/sorting
   };
 }

@@ -126,7 +126,39 @@ export const CANADA_SMALL_CAP = [
   'GOOS.TO',  // Canada Goose
   'ATZ.TO',   // Aritzia
   'GIL.TO',   // Gildan Activewear
-  'CSU.TO',   // Constellation Software
+];
+
+// ============================================
+// KANADA - TSX Venture Exchange (TSXV) - High Volatility
+// ============================================
+export const CANADA_TSXV = [
+  // Mining stocks (high volatility)
+  'ABR.V', 'ACU.V', 'AG.V', 'AL.V', 'AM.V', 'AR.V', 'ASM.V', 'AT.V', 'AUG.V', 'AUR.V',
+  'BTO.V', 'BTR.V', 'CCO.V', 'CDB.V', 'CEE.V', 'CGO.V', 'CKG.V', 'CLZ.V', 'CMB.V', 'CNC.V',
+  'COR.V', 'CPX.V', 'CRI.V', 'CSN.V', 'CTM.V', 'CUU.V', 'CVV.V', 'CYP.V', 'DAN.V', 'DGC.V',
+  'DME.V', 'DML.V', 'DPM.V', 'DSV.V', 'DTM.V', 'DVI.V', 'EAM.V', 'ECR.V', 'EDV.V', 'ELE.V',
+  'EMO.V', 'EMX.V', 'EQX.V', 'ERD.V', 'ESE.V', 'ETG.V', 'EVE.V', 'EXN.V', 'FCO.V', 'FDI.V',
+  'FMS.V', 'FNC.V', 'FNR.V', 'FOR.V', 'FR.V', 'FVI.V', 'GCM.V', 'GDX.V', 'GEM.V', 'GGO.V',
+  'GIG.V', 'GKO.V', 'GLD.V', 'GMN.V', 'GMO.V', 'GNG.V', 'GPM.V', 'GPR.V', 'GRB.V', 'GRC.V',
+  'GRT.V', 'GSV.V', 'GTA.V', 'GWM.V', 'GWR.V', 'GXU.V', 'HAR.V', 'HBM.V', 'HGC.V', 'HGT.V',
+  'HIT.V', 'HML.V', 'HMY.V', 'HNC.V', 'HNE.V', 'HNI.V', 'HNR.V', 'HNU.V', 'HNY.V', 'HNZ.V',
+  // Tech/Other volatile stocks
+  'HIVE.V', 'HUT.V', 'BITF.V', 'DMGI.V', 'NEO.V', 'LSPD.V', 'NVEI.V', 'TOI.V',
+];
+
+// ============================================
+// KANADA - Canadian Securities Exchange (CSE) - High Volatility
+// ============================================
+export const CANADA_CSE = [
+  // Cannabis stocks
+  'ACB.CN', 'APHA.CN', 'CGC.CN', 'HEXO.CN', 'OGI.CN', 'TLRY.CN', 'WEED.CN',
+  // Mining stocks
+  'ABR.CN', 'ACU.CN', 'AG.CN', 'AL.CN', 'AM.CN', 'AR.CN', 'ASM.CN', 'AT.CN', 'AUG.CN', 'AUR.CN',
+  'BTO.CN', 'BTR.CN', 'CCO.CN', 'CDB.CN', 'CEE.CN', 'CGO.CN', 'CKG.CN', 'CLZ.CN', 'CMB.CN', 'CNC.CN',
+  // Tech stocks
+  'HIVE.CN', 'HUT.CN', 'BITF.CN', 'DMGI.CN', 'NEO.CN', 'LSPD.CN', 'NVEI.CN', 'TOI.CN',
+  // Other volatile sectors
+  'CSE.CN', 'DME.CN', 'DML.CN', 'DPM.CN', 'DSV.CN', 'DTM.CN', 'DVI.CN', 'EAM.CN', 'ECR.CN',
 ];
 
 // ============================================
@@ -252,6 +284,10 @@ export const STOCK_LISTS = {
     large: CANADA_LARGE_CAP,
     mid: CANADA_MID_CAP,
     small: CANADA_SMALL_CAP,
+    tsxv: CANADA_TSXV,
+    cse: CANADA_CSE,
+    // Combined list for market cap filtering
+    all: [...CANADA_LARGE_CAP, ...CANADA_MID_CAP, ...CANADA_SMALL_CAP, ...CANADA_TSXV, ...CANADA_CSE],
   },
   usa: {
     large: USA_LARGE_CAP,

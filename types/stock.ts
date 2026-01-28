@@ -15,4 +15,8 @@ export interface StreakAnalysis {
   lastPrice: number;
   dailyChange: number;
   zScore: number; // Z-score för att mäta extremitet (hur långt från medelvärdet)
+  marketCap: number; // Market cap in original currency
+  currency: 'SEK' | 'USD' | 'CAD' | 'EUR' | 'DKK' | 'NOK'; // Original currency
+  marketCapSEK: number; // Market cap normalized to SEK (for filtering/sorting)
+  turnoverSEK: number; // Average turnover normalized to SEK (for filtering/sorting)
 }

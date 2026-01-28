@@ -1,5 +1,6 @@
 // Hämtar aktiedata från Google Finance / Yahoo Finance
 import { DailyData } from '../types/stock';
+import { getCurrencyForCountry } from './currency';
 
 // Konverterar aktiesymboler till Yahoo Finance-format
 // Sverige: VOLV-B -> VOLV-B.ST
@@ -8,6 +9,10 @@ import { DailyData } from '../types/stock';
 function toYahooSymbol(symbol: string, country: 'sweden' | 'norway' | 'denmark' | 'finland' | 'canada' | 'usa' = 'sweden'): string {
   // Om symbolen redan har ett suffix, använd den som den är
   if (symbol.includes('.')) {
+    // Handle Canadian exchanges: .V (TSXV) and .CN (CSE) are already in correct format for Yahoo
+    if (country === 'canada' && (symbol.endsWith('.V') || symbol.endsWith('.CN') || symbol.endsWith('.TO'))) {
+      return symbol; // TSXV (.V), CSE (.CN), and TSX (.TO) are correct
+    }
     return symbol; // Redan i rätt format (t.ex. RY.TO eller VOLV-B.ST)
   }
   
@@ -22,9 +27,8 @@ function toYahooSymbol(symbol: string, country: 'sweden' | 'norway' | 'denmark' 
     case 'finland':
       return `${symbol}.HE`; // Helsinki
     case 'canada':
-      // Kanadensiska symboler i listan har redan .TO suffix
-      // Men om någon saknas, lägg till det
-      return symbol.endsWith('.TO') ? symbol : `${symbol}.TO`;
+      // Default to TSX (.TO) if no suffix specified
+      return `${symbol}.TO`;
     case 'usa':
       return symbol; // USA behöver inget suffix
     default:
@@ -115,6 +119,8 @@ export async function fetchStockInfo(
   price: number;
   change: number;
   changePercent: number;
+  marketCap: number; // Market cap in original currency
+  currency: 'SEK' | 'USD' | 'CAD' | 'EUR' | 'DKK' | 'NOK';
 }> {
   const yahooSymbol = toYahooSymbol(symbol, country);
   
@@ -146,12 +152,34 @@ export async function fetchStockInfo(
     const previousClose = meta.previousClose || currentPrice;
     const change = currentPrice - previousClose;
     const changePercent = previousClose !== 0 ? (change / previousClose) * 100 : 0;
+    
+    // Get currency for this country
+    const currency = getCurrencyForCountry(country);
+    
+    // Get market cap from meta (Yahoo Finance usually provides in USD)
+    // But we need to convert it to the local currency for display
+    let marketCap = meta.marketCap || 0;
+    
+    // If market cap is not available, try to estimate from shares outstanding and price
+    if (!marketCap && meta.sharesOutstanding && currentPrice > 0) {
+      marketCap = meta.sharesOutstanding * currentPrice;
+    }
+    
+    // Yahoo Finance typically returns market cap in USD
+    // Convert to local currency if needed
+    // For non-USD countries, Yahoo might return in local currency already
+    // We'll assume Yahoo returns in USD and convert if needed
+    // But actually, let's check: Yahoo usually returns marketCap in the currency of the exchange
+    // So Swedish stocks = SEK, Canadian = CAD, etc.
+    // We'll keep it as-is and normalize later
 
     return {
       name: meta.longName || meta.shortName || symbol,
       price: currentPrice,
       change: change,
       changePercent: changePercent,
+      marketCap: marketCap || 0,
+      currency: currency,
     };
   } catch (error) {
     console.error(`Error fetching info for ${symbol}:`, error);

@@ -57,8 +57,9 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
           bValue = b.zScore ?? 0;
           break;
         case 'turnover':
-          aValue = a.avgTurnover20d ?? 0;
-          bValue = b.avgTurnover20d ?? 0;
+          // Use normalized SEK values for sorting
+          aValue = a.turnoverSEK ?? 0;
+          bValue = b.turnoverSEK ?? 0;
           break;
         default:
           return 0;

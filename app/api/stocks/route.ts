@@ -10,12 +10,14 @@ function getAllStocksForCountry(country: 'sweden' | 'norway' | 'denmark' | 'finl
   
   // For Canada, include TSXV and CSE
   if (country === 'canada') {
-    return countryLists.all || [
+    // Type guard: check if 'all' property exists (only Canada has it)
+    const canadaLists = countryLists as typeof countryLists & { all?: string[]; tsxv?: string[]; cse?: string[] };
+    return canadaLists.all || [
       ...(countryLists.large || []),
       ...(countryLists.mid || []),
       ...(countryLists.small || []),
-      ...(countryLists.tsxv || []),
-      ...(countryLists.cse || []),
+      ...(canadaLists.tsxv || []),
+      ...(canadaLists.cse || []),
     ];
   }
   

@@ -126,7 +126,18 @@ export function calculateRVOL(currentVolume: number, avgVolume: number): number 
  * @param history Array of DailyData
  * @returns Object with all calculated indicators
  */
-export function calculateAllIndicators(history: DailyData[]) {
+export function calculateAllIndicators(history: DailyData[]): {
+  rsi2: number;
+  rsi14: number;
+  sma20: number;
+  sma50: number;
+  sma200: number;
+  bollingerUpper: number;
+  bollingerLower: number;
+  bollingerMiddle: number;
+  avgVolume: number;
+  rvol: number;
+} {
   if (!history || history.length === 0) {
     return {
       rsi2: 50,

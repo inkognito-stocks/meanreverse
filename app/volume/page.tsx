@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { StockSelector, FilterValues } from '../../components/StockSelector';
 import { StreakAnalysis } from '../../types/stock';
 import { calculateAllIndicators } from '../../lib/ta';
@@ -104,30 +104,30 @@ export default function VolumePage() {
   }, [fetchStocks]);
 
   // Calculate stats
-  const stats: VolumeStats = {
+  const stats: VolumeStats = useMemo(() => ({
     highRVOL: allStocks.filter(s => (s.rvol ?? 0) > 2.0).length,
     liquidityCrunch: allStocks.filter(s => (s.rvol ?? 0) < 0.5 && (s.avgVolume ?? 0) > 0).length,
     capitalFlow: allStocks.reduce((sum, s) => {
       const volume = s.turnoverSEK || 0;
       return sum + (s.dailyChange > 0 ? volume : -volume);
     }, 0),
-  };
+  }), [allStocks]);
 
   // Filter and sort for each scanner
-  const unusualVolume = allStocks
+  const unusualVolume = useMemo(() => allStocks
     .filter(s => (s.rvol ?? 0) > 2.0)
     .sort((a, b) => (b.rvol ?? 0) - (a.rvol ?? 0))
-    .slice(0, 20);
+    .slice(0, 20), [allStocks]);
 
-  const capitulation = allStocks
+  const capitulation = useMemo(() => allStocks
     .filter(s => s.dailyChange < -4 && (s.rvol ?? 0) > 1.5)
     .sort((a, b) => a.dailyChange - b.dailyChange)
-    .slice(0, 20);
+    .slice(0, 20), [allStocks]);
 
-  const powerBreakouts = allStocks
+  const powerBreakouts = useMemo(() => allStocks
     .filter(s => s.dailyChange > 3 && (s.rvol ?? 0) > 1.5)
     .sort((a, b) => b.dailyChange - a.dailyChange)
-    .slice(0, 20);
+    .slice(0, 20), [allStocks]);
 
   return (
     <main>

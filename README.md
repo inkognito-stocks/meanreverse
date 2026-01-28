@@ -36,6 +36,20 @@ npm run dev
 
 Öppna [http://localhost:3000](http://localhost:3000) i din webbläsare.
 
+## 🌐 Komma åt appen på internet
+
+Efter att du har pushat till GitHub behöver du deploya appen för att den ska vara tillgänglig på internet.
+
+**Snabbaste sättet:** Använd Vercel (gratis och perfekt för Next.js)
+
+1. Gå till [vercel.com](https://vercel.com)
+2. Logga in med GitHub
+3. Välj ditt `meanreverse` repository
+4. Klicka "Deploy"
+5. Din app kommer att vara live på en URL som `meanreverse.vercel.app`
+
+Se `DEPLOY.md` för detaljerade instruktioner.
+
 Du kommer automatiskt att omdirigeras till login-sidan om du inte är inloggad.
 
 ## Deployment till GitHub

@@ -8,7 +8,7 @@ interface CacheEntry {
 }
 
 const cache: Record<string, CacheEntry> = {};
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes (300,000 ms)
+const CACHE_DURATION = 90 * 60 * 1000; // 90 minutes (5,400,000 ms)
 
 /**
  * Fetches stocks for a given country with client-side caching
@@ -23,9 +23,10 @@ export const fetchStocks = async (
   const now = Date.now();
 
   // 1. Check Cache
-  // If !forceRefresh AND cache exists for this country AND cache is younger than 5 minutes
+  // If !forceRefresh AND cache exists for this country AND cache is younger than 90 minutes
   if (!forceRefresh && cache[country] && (now - cache[country].timestamp < CACHE_DURATION)) {
-    console.log(`[Cache HIT] Returning cached data for ${country} (age: ${Math.round((now - cache[country].timestamp) / 1000)}s)`);
+    const ageMinutes = Math.round((now - cache[country].timestamp) / 60000);
+    console.log(`[Cache HIT] Returning cached data for ${country} (age: ${ageMinutes} minutes)`);
     return cache[country].data;
   }
 

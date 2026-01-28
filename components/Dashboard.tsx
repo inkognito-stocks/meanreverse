@@ -39,13 +39,13 @@ export const Dashboard = ({ stocks, isLoading, onRefresh, filters }: { stocks: S
     
     if (filters) {
       filtered = filtered.filter(stock => {
-        // Market Cap filter (convert MSEK to SEK for comparison)
+        // Market Cap filter (filters are in MSEK, stock.marketCapSEK is in SEK)
         const marketCapMSEK = (stock.marketCapSEK ?? 0) / 1_000_000;
         if (marketCapMSEK < filters.marketCapMin || marketCapMSEK > filters.marketCapMax) {
           return false;
         }
         
-        // Turnover filter
+        // Turnover filter (filters are in SEK, stock.turnoverSEK is in SEK)
         if ((stock.turnoverSEK ?? 0) < filters.minTurnover) {
           return false;
         }

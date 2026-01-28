@@ -90,16 +90,13 @@ export function analyzeStock(
     symbol,
     name,
     currentStreak,
-    avgTurnover20d: avgTurnover, // Keep original turnover in original currency
-    historicalHitRate: Math.round(hitRate),
+    totalDecline,
     lastPrice,
     dailyChange,
-    totalDecline,
+    marketCapSEK: marketCapSEK, // REQUIRED: Normalized to SEK for filtering/sorting
+    turnoverSEK: avgTurnoverSEK, // REQUIRED: Normalized to SEK for filtering/sorting
+    historicalHitRate: Math.round(hitRate),
     zScore: Math.round(zScore * 10) / 10, // Avrunda till en decimal
-    marketCap: marketCap || 0, // Original market cap in original currency (raw value)
-    turnover: avgTurnover, // Average turnover in original currency (raw value)
     currency: currency,
-    marketCapSEK: marketCapSEK, // Normalized to SEK for filtering/sorting
-    turnoverSEK: avgTurnoverSEK, // Normalized to SEK for filtering/sorting
   };
 }

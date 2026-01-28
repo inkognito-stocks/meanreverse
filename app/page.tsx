@@ -9,16 +9,17 @@ import { StreakAnalysis } from '../types/stock';
 export default function Home() {
   const [stocks, setStocks] = useState<StreakAnalysis[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentCountries, setCurrentCountries] = useState<('sweden' | 'norway' | 'denmark' | 'finland' | 'canada' | 'usa')[]>(['sweden']);
   const [currentFilters, setCurrentFilters] = useState<FilterValues>({
+    activeRegion: 'nordic',
+    selectedCountries: ['sweden'],
     marketCapMin: 0,
-    marketCapMax: 1000000,
-    minTurnover: 1000000,
+    marketCapMax: 500000,
+    minTurnover: 0,
   });
 
   // Använd useCallback för att stabilisera fetchStocks och undvika oändlig loop
   const fetchStocks = useCallback(async (
-    countries: ('sweden' | 'norway' | 'denmark' | 'finland' | 'canada' | 'usa')[]
+    countries: string[]
   ) => {
     setIsLoading(true);
     // Rensa gamla aktier när nya hämtas för att undvika att visa fel data
@@ -92,20 +93,16 @@ export default function Home() {
   }, []); // Empty dependency array - funktionen behöver inte återskapas
 
   // Använd useCallback för att stabilisera funktionsreferensen och undvika oändlig loop
-  const handleSelectionChange = useCallback((
-    countries: ('sweden' | 'norway' | 'denmark' | 'finland' | 'canada' | 'usa')[],
-    filters: FilterValues
-  ) => {
-    setCurrentCountries(countries);
+  const handleFilterChange = useCallback((filters: FilterValues) => {
     setCurrentFilters(filters);
-    fetchStocks(countries);
+    fetchStocks(filters.selectedCountries);
   }, [fetchStocks]); // fetchStocks är nu stabiliserad med useCallback
 
   // Använd useCallback för refresh-funktionen för att undvika oändlig loop
   const handleRefresh = useCallback(() => {
     // Trigger refresh by re-fetching with current selections
-    fetchStocks(currentCountries);
-  }, [fetchStocks, currentCountries]);
+    fetchStocks(currentFilters.selectedCountries);
+  }, [fetchStocks, currentFilters]);
 
   useEffect(() => {
     // Initial load med default values
@@ -116,7 +113,7 @@ export default function Home() {
     <main>
       <ServiceWorkerRegistration />
       <div className="min-h-screen bg-[#0f172a] text-white p-3 sm:p-6 font-sans">
-        <StockSelector onSelect={handleSelectionChange} isLoading={isLoading} />
+        <StockSelector onFilterChange={handleFilterChange} isLoading={isLoading} />
         <Dashboard 
           stocks={stocks} 
           isLoading={isLoading} 

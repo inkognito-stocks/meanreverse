@@ -5,9 +5,9 @@ export type Currency = 'SEK' | 'USD' | 'CAD' | 'EUR' | 'DKK' | 'NOK';
 // Exchange rates to SEK (approximate fixed rates)
 const EXCHANGE_RATES: Record<Currency, number> = {
   SEK: 1.0,
-  USD: 10.5,
-  CAD: 7.5,
-  EUR: 11.2,
+  USD: 10.8,
+  CAD: 7.6,
+  EUR: 11.4,
   DKK: 1.5,
   NOK: 1.0,
 };

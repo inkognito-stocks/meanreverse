@@ -13,11 +13,14 @@ export function StockSelector({ onSelect, isLoading = false }: StockSelectorProp
   const [selectedCapSizes, setSelectedCapSizes] = useState<('large' | 'mid' | 'small')[]>(['large']);
 
   // Uppdatera när val ändras
+  // OBS: onSelect är INTE i dependency-arrayen för att undvika oändlig loop
+  // onSelect skapas på nytt varje render i parent-komponenten
   useEffect(() => {
     if (selectedCountries.length > 0 && selectedCapSizes.length > 0) {
       onSelect(selectedCountries, selectedCapSizes);
     }
-  }, [selectedCountries, selectedCapSizes, onSelect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCountries, selectedCapSizes]);
 
   const handleCountryToggle = (country: 'sweden' | 'canada' | 'usa') => {
     setSelectedCountries(prev => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Dashboard } from '../components/Dashboard';
 import { ServiceWorkerRegistration } from '../components/ServiceWorkerRegistration';
 import { StockSelector } from '../components/StockSelector';
@@ -12,7 +12,8 @@ export default function Home() {
   const [currentCountries, setCurrentCountries] = useState<('sweden' | 'canada' | 'usa')[]>(['sweden']);
   const [currentCapSizes, setCurrentCapSizes] = useState<('large' | 'mid' | 'small')[]>(['large']);
 
-  const fetchStocks = async (
+  // Använd useCallback för att stabilisera fetchStocks och undvika oändlig loop
+  const fetchStocks = useCallback(async (
     countries: ('sweden' | 'canada' | 'usa')[],
     capSizes: ('large' | 'mid' | 'small')[]
   ) => {
@@ -82,21 +83,28 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []); // Empty dependency array - funktionen behöver inte återskapas
 
-  const handleSelectionChange = (
+  // Använd useCallback för att stabilisera funktionsreferensen och undvika oändlig loop
+  const handleSelectionChange = useCallback((
     countries: ('sweden' | 'canada' | 'usa')[],
     capSizes: ('large' | 'mid' | 'small')[]
   ) => {
     setCurrentCountries(countries);
     setCurrentCapSizes(capSizes);
     fetchStocks(countries, capSizes);
-  };
+  }, [fetchStocks]); // fetchStocks är nu stabiliserad med useCallback
+
+  // Använd useCallback för refresh-funktionen för att undvika oändlig loop
+  const handleRefresh = useCallback(() => {
+    // Trigger refresh by re-fetching with current selections
+    fetchStocks(currentCountries, currentCapSizes);
+  }, [fetchStocks, currentCountries, currentCapSizes]);
 
   useEffect(() => {
     // Initial load med default values
     fetchStocks(['sweden'], ['large']);
-  }, []); // Kör endast vid första laddningen
+  }, [fetchStocks]); // fetchStocks är nu stabiliserad med useCallback
 
   return (
     <main>
@@ -106,10 +114,7 @@ export default function Home() {
         <Dashboard 
           stocks={stocks} 
           isLoading={isLoading} 
-          onRefresh={() => {
-            // Trigger refresh by re-fetching with current selections
-            fetchStocks(currentCountries, currentCapSizes);
-          }}
+          onRefresh={handleRefresh}
         />
       </div>
     </main>

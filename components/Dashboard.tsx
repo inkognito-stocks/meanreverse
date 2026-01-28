@@ -101,13 +101,17 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
   };
 
   // Säkerhetskontroller för att undvika fel när arrayer är tomma
-  const longestStreak = stocks.length > 0 ? Math.max(...stocks.map(s => s.currentStreak)) : 0;
-  const averageStreak = stocks.length > 0 
-    ? (stocks.reduce((sum, s) => sum + s.currentStreak, 0) / stocks.length).toFixed(1)
+  const longestStreak = stocks.length > 0 && stocks.every(s => typeof s.currentStreak === 'number')
+    ? Math.max(...stocks.map(s => s.currentStreak ?? 0))
+    : 0;
+  const averageStreak = stocks.length > 0 && stocks.every(s => typeof s.currentStreak === 'number')
+    ? (stocks.reduce((sum, s) => sum + (s.currentStreak ?? 0), 0) / stocks.length).toFixed(1)
     : '0.0';
-  const worstDecline = stocks.length > 0 ? Math.min(...stocks.map(s => s.totalDecline)) : 0;
-  const severeDeclines = stocks.length > 0 
-    ? stocks.filter(s => s.totalDecline <= -10).length 
+  const worstDecline = stocks.length > 0 && stocks.every(s => typeof s.totalDecline === 'number')
+    ? Math.min(...stocks.map(s => s.totalDecline ?? 0))
+    : 0;
+  const severeDeclines = stocks.length > 0
+    ? stocks.filter(s => s && typeof s.totalDecline === 'number' && s.totalDecline <= -10).length 
     : 0;
 
   const handleRefresh = () => {
@@ -122,7 +126,8 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
   };
 
   // Hämta exchange från symbol (t.ex. .ST = Stockholm, .CO = Copenhagen, .HE = Helsinki, .OL = Oslo)
-  const getExchange = (symbol: string) => {
+  const getExchange = (symbol: string | undefined | null) => {
+    if (!symbol || typeof symbol !== 'string') return 'Unknown';
     if (symbol.includes('.ST')) return 'OMX Stockholm';
     if (symbol.includes('.CO')) return 'Copenhagen';
     if (symbol.includes('.HE')) return 'Helsinki';
@@ -135,8 +140,8 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
   };
 
   // Förkortat namn från fullständigt namn
-  const getShortName = (name: string) => {
-    if (!name) return '';
+  const getShortName = (name: string | undefined | null) => {
+    if (!name || typeof name !== 'string') return '';
     const words = name.split(' ');
     if (words.length === 1) return name.substring(0, 4);
     return words[0].substring(0, 4);
@@ -259,21 +264,22 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
             </thead>
             <tbody>
               {sortedStocks.map((stock, i) => {
+                if (!stock || !stock.symbol) return null;
                 return (
                   <tr key={stock.symbol} className="border-t border-slate-700 hover:bg-slate-800 transition">
                     <td className="p-4 font-bold text-white">#{i+1}</td>
                     <td className="p-4">
                       <span className="bg-red-500 text-white px-3 py-1.5 rounded-full text-sm font-bold inline-flex items-center gap-1">
-                        {stock.currentStreak}d <ArrowDown className="w-3 h-3" />
+                        {(stock.currentStreak ?? 0)}d <ArrowDown className="w-3 h-3" />
                       </span>
                     </td>
                     <td className="p-4">
-                      <div className="font-bold text-white">{stock.symbol}</div>
+                      <div className="font-bold text-white">{stock.symbol || 'N/A'}</div>
                       <div className="text-slate-400 text-sm">{getExchange(stock.symbol)}</div>
                     </td>
                     <td className="p-4 text-slate-400 text-sm">{getShortName(stock.name)}</td>
-                    <td className="p-4 font-mono text-green-400">{stock.historicalHitRate}%</td>
-                    <td className="p-4 text-red-400">{stock.totalDecline.toFixed(1)}%</td>
+                    <td className="p-4 font-mono text-green-400">{(stock.historicalHitRate ?? 0)}%</td>
+                    <td className="p-4 text-red-400">{((stock.totalDecline ?? 0)).toFixed(1)}%</td>
                     <td className="p-4">
                       <span className={`px-2 py-1 rounded font-mono text-sm ${
                         (stock.zScore ?? 0) <= -2.5 ? 'bg-red-500/30 border border-red-500/50 text-red-400 font-bold' :
@@ -292,50 +298,53 @@ export const Dashboard = ({ stocks, isLoading, onRefresh }: { stocks: StreakAnal
 
         {/* Mobile Cards */}
         <div className="md:hidden divide-y divide-slate-700">
-          {sortedStocks.map((stock, i) => (
-            <div key={stock.symbol} className="p-4 bg-[#1e293b]">
-              <div className="flex items-center gap-4">
-                {/* Rank */}
-                <span className="text-slate-400 text-sm font-bold">#{i+1}</span>
-                
-                {/* Streak Badge */}
-                <span className="bg-red-500 text-white px-3 py-2 rounded-full text-sm font-bold inline-flex items-center gap-1">
-                  {stock.currentStreak}d <ArrowDown className="w-3 h-3" />
-                </span>
-                
-                {/* Symbol and Exchange */}
-                <div className="flex-1">
-                  <div className="font-bold text-white">{stock.symbol}</div>
-                  <div className="text-slate-400 text-xs">{getExchange(stock.symbol)}</div>
+          {sortedStocks.map((stock, i) => {
+            if (!stock || !stock.symbol) return null;
+            return (
+              <div key={stock.symbol} className="p-4 bg-[#1e293b]">
+                <div className="flex items-center gap-4">
+                  {/* Rank */}
+                  <span className="text-slate-400 text-sm font-bold">#{i+1}</span>
+                  
+                  {/* Streak Badge */}
+                  <span className="bg-red-500 text-white px-3 py-2 rounded-full text-sm font-bold inline-flex items-center gap-1">
+                    {(stock.currentStreak ?? 0)}d <ArrowDown className="w-3 h-3" />
+                  </span>
+                  
+                  {/* Symbol and Exchange */}
+                  <div className="flex-1">
+                    <div className="font-bold text-white">{stock.symbol || 'N/A'}</div>
+                    <div className="text-slate-400 text-xs">{getExchange(stock.symbol)}</div>
+                  </div>
+                  
+                  {/* Short Name */}
+                  <div className="text-white text-sm font-semibold">{getShortName(stock.name)}</div>
                 </div>
                 
-                {/* Short Name */}
-                <div className="text-white text-sm font-semibold">{getShortName(stock.name)}</div>
+                {/* Additional info row */}
+                <div className="mt-3 pt-3 border-t border-slate-700 grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <p className="text-slate-400">Hit Rate</p>
+                    <p className="text-green-400 font-semibold">{(stock.historicalHitRate ?? 0)}%</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400">Decline</p>
+                    <p className="text-red-400 font-semibold">{((stock.totalDecline ?? 0)).toFixed(1)}%</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400">Z-Score</p>
+                    <p className={`font-semibold ${
+                      (stock.zScore ?? 0) <= -2.5 ? 'text-red-400' : 
+                      (stock.zScore ?? 0) <= -1.5 ? 'text-orange-400' : 
+                      'text-slate-400'
+                    }`}>
+                      {(stock.zScore ?? 0).toFixed(1)}
+                    </p>
+                  </div>
+                </div>
               </div>
-              
-              {/* Additional info row */}
-              <div className="mt-3 pt-3 border-t border-slate-700 grid grid-cols-3 gap-2 text-xs">
-                <div>
-                  <p className="text-slate-400">Hit Rate</p>
-                  <p className="text-green-400 font-semibold">{stock.historicalHitRate}%</p>
-                </div>
-                <div>
-                  <p className="text-slate-400">Decline</p>
-                  <p className="text-red-400 font-semibold">{stock.totalDecline.toFixed(1)}%</p>
-                </div>
-                <div>
-                  <p className="text-slate-400">Z-Score</p>
-                  <p className={`font-semibold ${
-                    (stock.zScore ?? 0) <= -2.5 ? 'text-red-400' : 
-                    (stock.zScore ?? 0) <= -1.5 ? 'text-orange-400' : 
-                    'text-slate-400'
-                  }`}>
-                    {(stock.zScore ?? 0).toFixed(1)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

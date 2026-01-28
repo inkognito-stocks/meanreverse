@@ -241,23 +241,290 @@ export const USA_SMALL_CAP = [
 // ============================================
 // NORGE (Oslo Børs)
 // ============================================
-export const NORWAY_LARGE_CAP: string[] = []; // TODO: Add Norwegian stocks
-export const NORWAY_MID_CAP: string[] = []; // TODO: Add Norwegian stocks
-export const NORWAY_SMALL_CAP: string[] = []; // TODO: Add Norwegian stocks
+export const NORWAY_LARGE_CAP = [
+  'EQNR',      // Equinor ASA
+  'DNB',       // DNB Bank Group
+  'TEL',       // Telenor Group
+  'NHY',       // Norsk Hydro
+  'YAR',       // Yara International
+  'AKSO',      // Aker Solutions
+  'AKER',      // Aker ASA
+  'GOGL',      // Golden Ocean Group
+  'FJORD',     // Fjord1
+  'MOWI',      // Mowi ASA (Marine Harvest)
+  'SALM',      // SalMar ASA
+  'AKSO-B',    // Aker Solutions B
+  'AKER-BP',   // Aker BP
+  'SUBC',      // Subsea 7
+  'RECSI',     // REC Silicon
+  'TOMRA',     // Tomra Systems
+  'KAHOT',     // Kahoot!
+  'AUTO',      // Autostore Holdings
+  'XXL',       // XXL ASA
+  'ENTRA',     // Entra ASA
+  'OBOS',      // OBOS
+  'STB',       // Storebrand
+  'GJF',       // Gjensidige Forsikring
+  'ORSTED',    // Ørsted (Danish but listed in Oslo)
+];
+
+export const NORWAY_MID_CAP = [
+  'AKER-BP',   // Aker BP
+  'SUBC',      // Subsea 7
+  'RECSI',     // REC Silicon
+  'TOMRA',     // Tomra Systems
+  'KAHOT',     // Kahoot!
+  'AUTO',      // Autostore Holdings
+  'XXL',       // XXL ASA
+  'ENTRA',     // Entra ASA
+  'OBOS',      // OBOS
+  'STB',       // Storebrand
+  'GJF',       // Gjensidige Forsikring
+  'BORR',      // Borr Drilling
+  'FRONT',     // Frontline Ltd
+  'GOGL',      // Golden Ocean Group
+  'HAVI',      // Havila Shipping
+  'MPCC',      // MPC Container Ships
+  'NAPA',      // Napa ASA
+  'NEXT',      // Next Biometrics
+  'NEXT-BIOT', // Next Biometrics Group
+  'NORSE',     // Norse Atlantic Airways
+  'OTELLO',    // Otello Corporation
+  'PGS',       // Petroleum Geo-Services
+  'QFR',       // Q-Free ASA
+  'RCL',       // Royal Caribbean Cruises (Norwegian listing)
+  'SALM',      // SalMar ASA
+  'SCHB',      // Schibsted ASA
+  'SDRL',      // Seadrill Limited
+  'SHLF',      // Shelf Drilling
+  'SOFF',      // Solstad Offshore
+  'TGS',       // TGS-NOPEC Geophysical Company
+  'TOTG',      // Totens Sparebank
+  'VEI',       // Veidekke ASA
+  'WSTEP',     // Western Bulk Chartering
+];
+
+export const NORWAY_SMALL_CAP = [
+  'ABG',       // ABG Sundal Collier
+  'ACR',       // Atlantic Container Line
+  'AKVA',      // AKVA Group
+  'ALNG',      // Awilco LNG
+  'AMSC',      // American Shipping Company
+  'ARCHER',    // Archer Limited
+  'AUSS',      // Austevoll Seafood
+  'BEWI',      // BEWI ASA
+  'BORR',      // Borr Drilling
+  'BWID',      // BW LPG
+  'CRAYON',    // Crayon Group
+  'DNO',       // DNO ASA
+  'EIOF',      // Eidesvik Offshore
+  'FJORD',     // Fjord1
+  'FRO',       // Frontline Ltd
+  'GOGL',      // Golden Ocean Group
+  'HAVI',      // Havila Shipping
+  'MPCC',      // MPC Container Ships
+  'NAPA',      // Napa ASA
+  'NEXT',      // Next Biometrics
+  'NORSE',     // Norse Atlantic Airways
+  'OTELLO',    // Otello Corporation
+  'PGS',       // Petroleum Geo-Services
+  'QFR',       // Q-Free ASA
+  'SALM',      // SalMar ASA
+  'SCHB',      // Schibsted ASA
+  'SDRL',      // Seadrill Limited
+  'SHLF',      // Shelf Drilling
+  'SOFF',      // Solstad Offshore
+  'TGS',       // TGS-NOPEC Geophysical Company
+  'VEI',       // Veidekke ASA
+  'WSTEP',     // Western Bulk Chartering
+  'XXL',       // XXL ASA
+  'ZAPPN',     // Zaptec ASA
+];
 
 // ============================================
 // DANMARK (Copenhagen)
 // ============================================
-export const DENMARK_LARGE_CAP: string[] = []; // TODO: Add Danish stocks
-export const DENMARK_MID_CAP: string[] = []; // TODO: Add Danish stocks
-export const DENMARK_SMALL_CAP: string[] = []; // TODO: Add Danish stocks
+export const DENMARK_LARGE_CAP = [
+  'NOVO-B',    // Novo Nordisk
+  'MAERSK-B',  // A.P. Møller - Mærsk
+  'ORSTED',    // Ørsted
+  'DSV',       // DSV Panalpina
+  'CARL-B',    // Carlsberg
+  'VWS',       // Vestas Wind Systems
+  'TRYG',      // Tryg A/S
+  'GN',        // GN Store Nord
+  'DEMANT',    // Demant
+  'CHR',       // Chr. Hansen Holding
+  'ROCHE-B',   // Roche Holding (Danish listing)
+  'PNDORA',    // Pandora
+  'FLS',       // FLSmidth
+  'ISS',       // ISS A/S
+  'COLO-B',    // Coloplast
+  'LUN',       // Lundbeck
+  'ROCK-B',    // Rockwool International
+  'SIM',       // SimCorp
+  'NETC',      // Netcompany Group
+  'BACTIQ',    // Bavarian Nordic
+];
+
+export const DENMARK_MID_CAP = [
+  'GN',        // GN Store Nord
+  'DEMANT',    // Demant
+  'CHR',       // Chr. Hansen Holding
+  'PNDORA',    // Pandora
+  'FLS',       // FLSmidth
+  'ISS',       // ISS A/S
+  'COLO-B',    // Coloplast
+  'LUN',       // Lundbeck
+  'ROCK-B',    // Rockwool International
+  'SIM',       // SimCorp
+  'NETC',      // Netcompany Group
+  'BACTIQ',    // Bavarian Nordic
+  'ALMB',      // Alm. Brand
+  'AMBU-B',    // Ambu
+  'BACTIQ',    // Bavarian Nordic
+  'BRG',       // Brødrene Gram
+  'CEMAT',     // Cemat A/S
+  'DFDS',      // DFDS A/S
+  'EGNET',     // Egnet A/S
+  'FLUGT',     // Flügger
+  'GUBRA',     // Gubra
+  'HARBOE',    // Harboes Bryggeri
+  'HVID',      // Hvidbjerg Bank
+  'ISS',       // ISS A/S
+  'JYSK',      // JYSK
+  'KMD',       // KMD A/S
+  'LUN',       // Lundbeck
+  'NETC',      // Netcompany Group
+  'PNDORA',    // Pandora
+  'ROCK-B',    // Rockwool International
+  'SIM',       // SimCorp
+  'TRYG',      // Tryg A/S
+  'VWS',       // Vestas Wind Systems
+];
+
+export const DENMARK_SMALL_CAP = [
+  'ALMB',      // Alm. Brand
+  'AMBU-B',    // Ambu
+  'BACTIQ',    // Bavarian Nordic
+  'BRG',       // Brødrene Gram
+  'CEMAT',     // Cemat A/S
+  'DFDS',      // DFDS A/S
+  'EGNET',     // Egnet A/S
+  'FLUGT',     // Flügger
+  'GUBRA',     // Gubra
+  'HARBOE',    // Harboes Bryggeri
+  'HVID',      // Hvidbjerg Bank
+  'JYSK',      // JYSK
+  'KMD',       // KMD A/S
+  'NETC',      // Netcompany Group
+  'PNDORA',    // Pandora
+  'ROCK-B',    // Rockwool International
+  'SIM',       // SimCorp
+  'TRYG',      // Tryg A/S
+  'VWS',       // Vestas Wind Systems
+  'ZAPPN',     // Zaptec ASA (if listed)
+];
 
 // ============================================
 // FINLAND (Helsinki)
 // ============================================
-export const FINLAND_LARGE_CAP: string[] = []; // TODO: Add Finnish stocks
-export const FINLAND_MID_CAP: string[] = []; // TODO: Add Finnish stocks
-export const FINLAND_SMALL_CAP: string[] = []; // TODO: Add Finnish stocks
+export const FINLAND_LARGE_CAP = [
+  'NOKIA',     // Nokia Corporation
+  'UPM',       // UPM-Kymmene
+  'NESTE',     // Neste Corporation
+  'SAMPO',     // Sampo Group
+  'ORION-B',   // Orion Corporation
+  'KESKO',     // Kesko Corporation
+  'STOCKMANN', // Stockmann
+  'OUTOKUMPU', // Outokumpu
+  'METSO',     // Metso Outotec
+  'VALMET',    // Valmet Corporation
+  'KONE',      // Kone Corporation
+  'WARTSILA',  // Wärtsilä Corporation
+  'FORTUM',    // Fortum Corporation
+  'ELISA',     // Elisa Corporation
+  'TELIA',     // Telia Company (Finnish listing)
+  'STORA-ENSO', // Stora Enso
+  'HUHTAMAKI', // Huhtamäki
+  'CASTORAMA', // Castorama (if listed)
+  'CARGOTEC',  // Cargotec Corporation
+  'METSA',     // Metsä Group
+];
+
+export const FINLAND_MID_CAP = [
+  'ORION-B',   // Orion Corporation
+  'KESKO',     // Kesko Corporation
+  'STOCKMANN', // Stockmann
+  'OUTOKUMPU', // Outokumpu
+  'METSO',     // Metso Outotec
+  'VALMET',    // Valmet Corporation
+  'KONE',      // Kone Corporation
+  'WARTSILA',  // Wärtsilä Corporation
+  'FORTUM',    // Fortum Corporation
+  'ELISA',     // Elisa Corporation
+  'STORA-ENSO', // Stora Enso
+  'HUHTAMAKI', // Huhtamäki
+  'CARGOTEC',  // Cargotec Corporation
+  'METSA',     // Metsä Group
+  'ALMA',      // Alma Media
+  'ALMA-MEDIA', // Alma Media Corporation
+  'APETIT',    // Apetit
+  'ASP',       // Aspo
+  'ATRIUM',    // Atrium
+  'BONAVA',    // Bonava
+  'CASTORAMA', // Castorama
+  'CARGOTEC',  // Cargotec Corporation
+  'DIGIA',     // Digia
+  'ELEQ',      // Eleq
+  'ELISA',     // Elisa Corporation
+  'FARMAN',    // Farman
+  'FORTUM',    // Fortum Corporation
+  'HUHTAMAKI', // Huhtamäki
+  'KESKO',     // Kesko Corporation
+  'KONE',      // Kone Corporation
+  'METSA',     // Metsä Group
+  'METSO',     // Metso Outotec
+  'NESTE',     // Neste Corporation
+  'NOKIA',     // Nokia Corporation
+  'ORION-B',   // Orion Corporation
+  'OUTOKUMPU', // Outokumpu
+  'SAMPO',     // Sampo Group
+  'STOCKMANN', // Stockmann
+  'STORA-ENSO', // Stora Enso
+  'TELIA',     // Telia Company
+  'UPM',       // UPM-Kymmene
+  'VALMET',    // Valmet Corporation
+  'WARTSILA',  // Wärtsilä Corporation
+];
+
+export const FINLAND_SMALL_CAP = [
+  'ALMA',      // Alma Media
+  'APETIT',    // Apetit
+  'ASP',       // Aspo
+  'ATRIUM',    // Atrium
+  'BONAVA',    // Bonava
+  'CASTORAMA', // Castorama
+  'DIGIA',     // Digia
+  'ELEQ',      // Eleq
+  'FARMAN',    // Farman
+  'HUHTAMAKI', // Huhtamäki
+  'KESKO',     // Kesko Corporation
+  'METSA',     // Metsä Group
+  'METSO',     // Metso Outotec
+  'NESTE',     // Neste Corporation
+  'NOKIA',     // Nokia Corporation
+  'ORION-B',   // Orion Corporation
+  'OUTOKUMPU', // Outokumpu
+  'SAMPO',     // Sampo Group
+  'STOCKMANN', // Stockmann
+  'STORA-ENSO', // Stora Enso
+  'TELIA',     // Telia Company
+  'UPM',       // UPM-Kymmene
+  'VALMET',    // Valmet Corporation
+  'WARTSILA',  // Wärtsilä Corporation
+  'ZAPPN',     // Zaptec ASA (if listed)
+];
 
 export const STOCK_LISTS = {
   sweden: {

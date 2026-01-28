@@ -9,6 +9,8 @@ import { StreakAnalysis } from '../types/stock';
 export default function Home() {
   const [stocks, setStocks] = useState<StreakAnalysis[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentCountries, setCurrentCountries] = useState<('sweden' | 'canada' | 'usa')[]>(['sweden']);
+  const [currentCapSizes, setCurrentCapSizes] = useState<('large' | 'mid' | 'small')[]>(['large']);
 
   const fetchStocks = async (
     countries: ('sweden' | 'canada' | 'usa')[],
@@ -70,6 +72,8 @@ export default function Home() {
     countries: ('sweden' | 'canada' | 'usa')[],
     capSizes: ('large' | 'mid' | 'small')[]
   ) => {
+    setCurrentCountries(countries);
+    setCurrentCapSizes(capSizes);
     fetchStocks(countries, capSizes);
   };
 
@@ -83,7 +87,14 @@ export default function Home() {
       <ServiceWorkerRegistration />
       <div className="min-h-screen bg-[#0f172a] text-white p-3 sm:p-6 font-sans">
         <StockSelector onSelect={handleSelectionChange} isLoading={isLoading} />
-        <Dashboard stocks={stocks} isLoading={isLoading} />
+        <Dashboard 
+          stocks={stocks} 
+          isLoading={isLoading} 
+          onRefresh={() => {
+            // Trigger refresh by re-fetching with current selections
+            fetchStocks(currentCountries, currentCapSizes);
+          }}
+        />
       </div>
     </main>
   );

@@ -54,8 +54,8 @@ export async function GET(request: Request) {
         // Hämta aktuell info för namn
         const info = await fetchStockInfo(symbol, country);
         
-        // Analysera aktien
-        const analysis = analyzeStock(symbol, info.name, history);
+        // Analysera aktien (använd symbol som fallback om namn saknas)
+        const analysis = analyzeStock(symbol, info.name || symbol, history);
         
         if (analysis) {
           analyses.push(analysis);

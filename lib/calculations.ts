@@ -17,11 +17,14 @@ export function analyzeStock(
   let currentStreak = 0;
   const reversedHistory = [...history].reverse();
   
-  for (let i = 0; i < reversedHistory.length - 1; i++) {
-    if (reversedHistory[i].close < reversedHistory[i + 1].close) {
-      currentStreak++;
-    } else {
-      break;
+  // Säkerhetskontroll: behöver minst 2 datapunkter för att beräkna streak
+  if (reversedHistory.length >= 2) {
+    for (let i = 0; i < reversedHistory.length - 1; i++) {
+      if (reversedHistory[i]?.close < reversedHistory[i + 1]?.close) {
+        currentStreak++;
+      } else {
+        break;
+      }
     }
   }
 
@@ -49,21 +52,29 @@ export function analyzeStock(
   }
 
   const hitRate = occurrences > 0 ? (successes / occurrences) * 100 : 0;
-  const lastPrice = reversedHistory[0].close;
-  const prevPrice = reversedHistory[1].close;
-  const firstPriceInStreak = reversedHistory[currentStreak].close;
+  const lastPrice = reversedHistory[0]?.close ?? 0;
+  const prevPrice = reversedHistory[1]?.close ?? lastPrice; // Fallback till lastPrice om prevPrice saknas
+  const firstPriceInStreak = reversedHistory[currentStreak]?.close ?? lastPrice; // Fallback om index saknas
 
   // 4. Beräkna Z-score för att mäta extremitet (hur långt från medelvärdet)
   // Använd senaste 20 dagarna för beräkning
-  const prices = recent20.map(d => d.close);
-  const n = prices.length;
-  const mean = prices.reduce((a, b) => a + b, 0) / n;
-  const variance = prices.reduce((acc, price) => acc + Math.pow(price - mean, 2), 0) / n;
-  const stdDev = Math.sqrt(variance);
+  const prices = recent20.map(d => d.close).filter(p => p > 0); // Filtrera bort ogiltiga priser
+  let zScore = 0;
   
-  // Beräkna Z-score: (lastPrice - mean) / stdDev
-  // Negativt värde betyder att priset är under medelvärdet
-  const zScore = stdDev > 0 ? (lastPrice - mean) / stdDev : 0;
+  if (prices.length > 1 && lastPrice > 0) {
+    const n = prices.length;
+    const mean = prices.reduce((a, b) => a + b, 0) / n;
+    const variance = prices.reduce((acc, price) => acc + Math.pow(price - mean, 2), 0) / n;
+    const stdDev = Math.sqrt(variance);
+    
+    // Beräkna Z-score: (lastPrice - mean) / stdDev
+    // Negativt värde betyder att priset är under medelvärdet
+    zScore = stdDev > 0 ? (lastPrice - mean) / stdDev : 0;
+  }
+
+  // Säkerhetskontroller för division med noll
+  const dailyChange = prevPrice > 0 ? ((lastPrice - prevPrice) / prevPrice) * 100 : 0;
+  const totalDecline = firstPriceInStreak > 0 ? ((lastPrice - firstPriceInStreak) / firstPriceInStreak) * 100 : 0;
 
   return {
     symbol,
@@ -72,8 +83,8 @@ export function analyzeStock(
     avgTurnover20d: avgTurnover,
     historicalHitRate: Math.round(hitRate),
     lastPrice,
-    dailyChange: ((lastPrice - prevPrice) / prevPrice) * 100,
-    totalDecline: ((lastPrice - firstPriceInStreak) / firstPriceInStreak) * 100,
+    dailyChange,
+    totalDecline,
     zScore: Math.round(zScore * 10) / 10 // Avrunda till en decimal
   };
 }

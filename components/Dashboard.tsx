@@ -5,11 +5,20 @@ import { ArrowDown, TrendingUp } from 'lucide-react';
 import { StreakAnalysis } from '../types/stock';
 import { LogoutButton } from './LogoutButton';
 
-export const Dashboard = ({ stocks }: { stocks: StreakAnalysis[] }) => {
-  if (!stocks || stocks.length === 0) {
+export const Dashboard = ({ stocks, isLoading }: { stocks: StreakAnalysis[]; isLoading?: boolean }) => {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-[#0f172a] text-white p-6 font-sans flex items-center justify-center">
-        <p className="text-slate-400">Inga aktier att visa</p>
+        <p className="text-slate-400">Laddar aktier...</p>
+      </div>
+    );
+  }
+
+  if (!stocks || stocks.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] text-white p-6 font-sans flex flex-col items-center justify-center">
+        <p className="text-slate-400 mb-2">Inga aktier att visa</p>
+        <p className="text-slate-500 text-sm">Kontrollera konsolen för felmeddelanden</p>
       </div>
     );
   }

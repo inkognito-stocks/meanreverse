@@ -3,9 +3,10 @@ import { DailyData } from '../types/stock';
 
 // Konverterar aktiesymboler till Yahoo Finance-format
 // Sverige: VOLV-B -> VOLV-B.ST
-// Kanada: RY.TO -> RY.TO (redan korrekt)
+// Kanada: RY.TO -> RY.TO (redan korrekt i listan)
 // USA: AAPL -> AAPL (ingen ändring)
 function toYahooSymbol(symbol: string, country: 'sweden' | 'canada' | 'usa' = 'sweden'): string {
+  // Om symbolen redan har ett suffix, använd den som den är
   if (symbol.includes('.')) {
     return symbol; // Redan i rätt format (t.ex. RY.TO eller VOLV-B.ST)
   }
@@ -15,7 +16,9 @@ function toYahooSymbol(symbol: string, country: 'sweden' | 'canada' | 'usa' = 's
     case 'sweden':
       return `${symbol}.ST`; // Stockholmsbörsen
     case 'canada':
-      return `${symbol}.TO`; // Toronto Stock Exchange
+      // Kanadensiska symboler i listan har redan .TO suffix
+      // Men om någon saknas, lägg till det
+      return symbol.endsWith('.TO') ? symbol : `${symbol}.TO`;
     case 'usa':
       return symbol; // USA behöver inget suffix
     default:

@@ -1,14 +1,20 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { StockSelector, FilterValues } from '../../components/StockSelector';
 import { StreakAnalysis } from '../../types/stock';
 import { fetchStocks } from '../../lib/borsdata';
-import { Flame, TrendingUp, TrendingDown, Activity, Zap, BarChart3, Loader2 } from 'lucide-react';
+import { Flame, TrendingUp, TrendingDown, Activity, Zap, BarChart3, Loader2, HelpCircle, ChevronUp, ChevronDown, X } from 'lucide-react';
+
+type SortColumn = 'price' | 'change' | 'rvol' | 'intensity';
+type SortDirection = 'asc' | 'desc';
 
 export default function VolumePage() {
   const [stocks, setStocks] = useState<StreakAnalysis[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [sortColumn, setSortColumn] = useState<SortColumn>('rvol');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [mobileTooltip, setMobileTooltip] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterValues>({
     activeRegion: 'nordic',
     selectedCountries: ['sweden', 'usa', 'canada'], // Default to broad search
@@ -81,11 +87,54 @@ export default function VolumePage() {
     rvol: getRVOL(s)
   }));
 
-  // 1. THE HOTLIST: High Activity (>2x RVOL)
-  const hotList = processedStocks
-    .filter((s: StreakAnalysis & { rvol: number }) => s.rvol > 2.0)
-    .sort((a: StreakAnalysis & { rvol: number }, b: StreakAnalysis & { rvol: number }) => b.rvol - a.rvol)
-    .slice(0, 15);
+  // Sort function
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('desc');
+    }
+  };
+
+  // 1. THE HOTLIST: High Activity (>2x RVOL) with sorting
+  const hotList = useMemo(() => {
+    const filtered = processedStocks.filter((s: StreakAnalysis & { rvol: number }) => s.rvol > 2.0);
+    
+    const sorted = [...filtered].sort((a: StreakAnalysis & { rvol: number }, b: StreakAnalysis & { rvol: number }) => {
+      let aValue: number;
+      let bValue: number;
+      
+      switch (sortColumn) {
+        case 'price':
+          aValue = a.lastPrice ?? 0;
+          bValue = b.lastPrice ?? 0;
+          break;
+        case 'change':
+          aValue = a.dailyChange ?? 0;
+          bValue = b.dailyChange ?? 0;
+          break;
+        case 'rvol':
+          aValue = a.rvol;
+          bValue = b.rvol;
+          break;
+        case 'intensity':
+          aValue = a.rvol;
+          bValue = b.rvol;
+          break;
+        default:
+          return 0;
+      }
+      
+      if (sortDirection === 'asc') {
+        return aValue - bValue;
+      } else {
+        return bValue - aValue;
+      }
+    });
+    
+    return sorted.slice(0, 15);
+  }, [processedStocks, sortColumn, sortDirection]);
 
   // 2. BREAKOUTS: Price Up + Volume Up
   const breakouts = processedStocks
@@ -154,10 +203,47 @@ export default function VolumePage() {
                     <thead className="text-xs text-slate-400 uppercase bg-slate-800/50">
                       <tr>
                         <th className="p-4">Symbol</th>
-                        <th className="p-4 text-right">Price</th>
-                        <th className="p-4 text-right">Change</th>
-                        <th className="p-4 w-1/3">Activity Intensity</th>
-                        <th className="p-4 text-right">RVOL</th>
+                        <th 
+                          className="p-4 text-right cursor-pointer hover:text-white transition-colors select-none"
+                          onClick={() => handleSort('price')}
+                        >
+                          <div className="flex items-center justify-end gap-1">
+                            Price
+                            {sortColumn === 'price' && (
+                              sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                            )}
+                          </div>
+                        </th>
+                        <th 
+                          className="p-4 text-right cursor-pointer hover:text-white transition-colors select-none"
+                          onClick={() => handleSort('change')}
+                        >
+                          <div className="flex items-center justify-end gap-1">
+                            Change
+                            <Tooltip id="change" text="Dagens procentuella förändring i priset. Positivt värde = upp, negativt = ner." mobileTooltip={mobileTooltip} setMobileTooltip={setMobileTooltip} />
+                            {sortColumn === 'change' && (
+                              sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                            )}
+                          </div>
+                        </th>
+                        <th className="p-4 w-1/3">
+                          <div className="flex items-center gap-1">
+                            Activity Intensity
+                            <Tooltip id="intensity" text="Visuell indikator för volymaktivitet. Längre bar = högre ovanlig volym." mobileTooltip={mobileTooltip} setMobileTooltip={setMobileTooltip} />
+                          </div>
+                        </th>
+                        <th 
+                          className="p-4 text-right cursor-pointer hover:text-white transition-colors select-none"
+                          onClick={() => handleSort('rvol')}
+                        >
+                          <div className="flex items-center justify-end gap-1">
+                            RVOL
+                            <Tooltip id="rvol" text="Relative Volume - Hur många gånger högre volymen är jämfört med genomsnittet. 2.0x = dubbel volym." mobileTooltip={mobileTooltip} setMobileTooltip={setMobileTooltip} />
+                            {sortColumn === 'rvol' && (
+                              sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                            )}
+                          </div>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-700/50">
@@ -274,3 +360,58 @@ const SignalRow = ({ stock, type }: { stock: StreakAnalysis, type: 'bull'|'bear'
 const EmptyState = () => (
   <div className="p-4 text-center text-slate-500 text-xs italic">No signals detected.</div>
 );
+
+// Tooltip component for help icons
+const Tooltip = ({ id, text, mobileTooltip, setMobileTooltip }: { id: string; text: string; mobileTooltip: string | null; setMobileTooltip: (id: string | null) => void }) => {
+  const [isMobile, setIsMobile] = useState(false);
+  const isOpen = mobileTooltip === id;
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  if (isMobile) {
+    return (
+      <div className="relative inline-block">
+        <button
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation();
+            setMobileTooltip(isOpen ? null : id);
+          }}
+          className="inline-flex items-center"
+          aria-label="Visa förklaring"
+        >
+          <HelpCircle className="w-3 h-3 ml-1 text-slate-400 hover:text-white transition-colors" />
+        </button>
+        {isOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setMobileTooltip(null)}>
+            <div className="bg-[#1e293b] border border-slate-600 rounded-lg p-4 max-w-sm relative" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+              <button
+                onClick={() => setMobileTooltip(null)}
+                className="absolute top-2 right-2 text-slate-400 hover:text-white"
+                aria-label="Stäng"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <p className="text-sm text-white pr-6">{text}</p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Desktop: Tooltip on hover
+  return (
+    <div className="relative group inline-flex items-center">
+      <HelpCircle className="w-3 h-3 text-slate-400 group-hover:text-white transition-colors cursor-help" />
+      <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-[#1e293b] border border-slate-600 rounded-lg text-xs text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 max-w-xs">
+        {text}
+        <div className="absolute top-full right-4 -mt-1 border-4 border-transparent border-t-slate-600"></div>
+      </div>
+    </div>
+  );
+};
